@@ -20,4 +20,10 @@ dependencies {
     add("testImplementation", library("mockk"))
     add("testImplementation", library("turbine"))
     add("testImplementation", library("kotlinx-coroutines-test"))
+
+    add("androidTestImplementation", library("androidx-compose-ui-test-junit4"))
+    add("androidTestImplementation", library("androidx-test-ext-junit"))
+    add("androidTestImplementation", library("androidx-test-runner"))
+    add("androidTestImplementation", library("androidx-test-espresso-core"))
+    add("debugImplementation", library("androidx-compose-ui-test-manifest"))
 }

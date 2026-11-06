@@ -3,6 +3,9 @@ package com.seasaw.theta.core.data
 import com.seasaw.theta.core.data.settings.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /** What the user asked to remove. */
 data class EraseRequest(
@@ -47,6 +50,11 @@ class LocalDataEraser @Inject constructor(
     private val adBlockExemptions: AdBlockExemptionsRepository,
     private val settings: SettingsRepository,
 ) {
+    private val _erasures = MutableSharedFlow<EraseRequest>(extraBufferCapacity = 1)
+
+    /** Emits after each erase, so holders of live copies of the data, such as open tabs, can drop them too. */
+    val erasures: SharedFlow<EraseRequest> = _erasures.asSharedFlow()
+
     suspend fun erase(request: EraseRequest) {
         if (request.history) history.clear()
         if (request.tabs) {
@@ -61,5 +69,6 @@ class LocalDataEraser @Inject constructor(
             adBlockExemptions.clear()
         }
         if (request.settings) settings.resetToDefaults()
+        _erasures.emit(request)
     }
 }

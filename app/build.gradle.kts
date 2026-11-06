@@ -4,6 +4,7 @@ plugins {
     id("theta.android.application")
     id("theta.android.compose")
     id("theta.android.hilt")
+    id("theta.android.baselineprofile")
 }
 
 // Firebase needs a config file that must never be committed for prod. Without it the app still builds and runs, and
@@ -26,12 +27,17 @@ val releaseAdMobAppId = secret("ADMOB_APP_ID").orEmpty()
 android {
     namespace = "com.seasaw.theta"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         // Placeholder from product.md. Source packages use com.seasaw.theta instead because `in` is a hard keyword in
         // Kotlin, so the final store ID can change here without touching any source file.
         applicationId = "in.seasaw.browser"
         versionCode = 1
         versionName = "0.1.0"
+        manifestPlaceholders["admobAppId"] = testAdMobAppId
     }
 
     androidResources {
@@ -53,22 +59,31 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            manifestPlaceholders["admobAppId"] = testAdMobAppId
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            manifestPlaceholders["admobAppId"] = releaseAdMobAppId
             signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 }
 
+// Only the real release variant may carry a real ID. Everything else, including the Baseline Profile plugin's own
+// release-like variants, is told apart here so that a test or benchmark run can never serve a real ad (ads rule 9).
+androidComponents {
+    onVariants(selector().withName("release")) { variant ->
+        variant.manifestPlaceholders.put("admobAppId", releaseAdMobAppId)
+    }
+}
+
 // An empty ID crashes the Ads SDK on launch, so a release build without one must fail here and not in users' hands.
+val requiredAdSecrets = listOf("ADMOB_APP_ID", "ADMOB_NATIVE_ID", "ADMOB_INTERSTITIAL_ID").filter {
+    secret(it).isNullOrEmpty()
+}
 tasks.matching { it.name == "bundleRelease" || it.name == "assembleRelease" }.configureEach {
-    val appId = releaseAdMobAppId
-    doFirst { check(appId.isNotEmpty()) { "ADMOB_APP_ID is not set in local.properties or the environment" } }
+    val missing = requiredAdSecrets
+    doFirst { check(missing.isEmpty()) { "Set these in local.properties or the environment: $missing" } }
 }
 
 dependencies {
@@ -87,10 +102,17 @@ dependencies {
     implementation(project(":feature:newtab"))
     implementation(project(":feature:settings"))
 
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.profileinstaller)
+
+    baselineProfile(project(":benchmark"))
 
     testImplementation(libs.junit)
 }

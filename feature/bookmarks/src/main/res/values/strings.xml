@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookmarks_title">Bookmarks</string>
+    <string name="bookmarks_empty_title">No bookmarks yet</string>
+    <string name="bookmarks_empty_message">Use the menu on any page to bookmark it.</string>
+</resources>

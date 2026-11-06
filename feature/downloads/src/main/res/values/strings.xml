@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_empty_title">No downloads yet</string>
+    <string name="downloads_empty_message">Files you download appear here.</string>
+    <string name="downloads_failed">Download failed</string>
+    <string name="downloads_paused">Waiting for network</string>
+    <string name="downloads_remove">Remove from list</string>
+    <string name="downloads_file_missing">This file is no longer on your phone</string>
+    <string name="downloads_no_app">No app on this phone can open this file</string>
+</resources>

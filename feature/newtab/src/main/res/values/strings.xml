@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="speed_dial_title">Speed dial</string>
+    <string name="speed_dial_add">Add</string>
+    <string name="speed_dial_add_title">Add a site</string>
+    <string name="speed_dial_address">Web address</string>
+    <string name="speed_dial_name">Name (optional)</string>
+    <string name="speed_dial_remove_message">Remove this site from speed dial?</string>
+    <string name="recent_sites_title">Recent sites</string>
+</resources>

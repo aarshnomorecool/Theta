@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class AdsState { PENDING, READY, UNAVAILABLE }
+
 /**
  * The only class that talks to the ads SDKs (ads rule 10), apart from the slot composable added with the UI.
  *
@@ -47,14 +49,18 @@ class AdsManager @Inject constructor(
     private var interstitial: InterstitialAd? = null
     private var interstitialLoading = false
 
-    private val _adsReady = MutableStateFlow(false)
+    // Benchmark variants build on release code with no ad units, and the SDK throws if asked to load a blank one.
+    private val adsAvailable: Boolean
+        get() = config.adsEnabled && BuildConfig.NATIVE_AD_UNIT.isNotEmpty()
 
-    /** True once consent is settled and the SDK is up. Ad slots stay empty and take no space until then. */
-    val adsReady: StateFlow<Boolean> = _adsReady.asStateFlow()
+    private val _state = MutableStateFlow(if (adsAvailable) AdsState.PENDING else AdsState.UNAVAILABLE)
+
+    /** Slots reserve their space while [AdsState.PENDING], so that an ad arriving later never moves content. */
+    val state: StateFlow<AdsState> = _state.asStateFlow()
 
     /** Runs the consent flow, then initialises ads. Safe to call again: only the first call does anything. */
     fun start(activity: Activity) {
-        if (!config.adsEnabled || !started.compareAndSet(false, true)) return
+        if (!adsAvailable || !started.compareAndSet(false, true)) return
         consentInformation.requestConsentInfoUpdate(
             activity,
             ConsentRequestParameters.Builder().build(),
@@ -71,12 +77,19 @@ class AdsManager @Inject constructor(
     }
 
     private fun initialiseIfAllowed() {
-        if (!consentInformation.canRequestAds() || !sdkInitialised.compareAndSet(false, true)) return
+        if (!consentInformation.canRequestAds()) {
+            _state.value = AdsState.UNAVAILABLE
+            return
+        }
+        if (!sdkInitialised.compareAndSet(false, true)) return
         MobileAds.initialize(context) {
-            _adsReady.value = true
+            _state.value = AdsState.READY
             loadInterstitial()
         }
     }
+
+    /** Records that a slot on [placement] displayed an ad. */
+    fun reportShown(placement: AdPlacement) = analytics.track(AnalyticsEvent.AdShown(placement.analyticsId))
 
     /** Pre-loads so that showing later is instant and does not delay the transition the user just asked for. */
     private fun loadInterstitial() {
@@ -110,7 +123,7 @@ class AdsManager @Inject constructor(
         onDone: () -> Unit,
     ): Boolean {
         val now = SystemClock.elapsedRealtime()
-        val allowed = _adsReady.value &&
+        val allowed = _state.value == AdsState.READY &&
             config.adsEnabled &&
             interstitialGate.mayShow(now, isFirstSession, isPageLoading, config.interstitialsEnabled)
         val ad = interstitial.takeIf { allowed }

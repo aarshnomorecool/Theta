@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     id("theta.android.library")
     id("theta.android.hilt")
+    id("theta.android.compose")
 }
 
 // Real IDs come from local.properties or CI secrets and are never committed. Debug builds ignore them entirely, so a
@@ -42,6 +43,8 @@ dependencies {
     implementation(project(":core:data"))
     implementation(libs.play.services.ads)
     implementation(libs.ump)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

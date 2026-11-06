@@ -29,7 +29,7 @@ class TabStateStore @Inject constructor(
             temporary.writeBytes(state)
             temporary.renameTo(fileFor(tabId))
         } catch (ignored: IOException) {
-            false
+            // State is only a cache, so a failed write just means this tab reloads its URL later.
         }
         Unit
     }

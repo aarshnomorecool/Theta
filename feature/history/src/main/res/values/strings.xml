@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_title">History</string>
+    <string name="history_search">Search history</string>
+    <string name="history_empty_title">No history yet</string>
+    <string name="history_no_matches">Nothing matches your search</string>
+    <string name="history_empty_message">Pages you visit appear here. They stay on this phone.</string>
+    <string name="history_clear_title">Clear all history?</string>
+    <string name="history_clear_message">This cannot be undone.</string>
+</resources>

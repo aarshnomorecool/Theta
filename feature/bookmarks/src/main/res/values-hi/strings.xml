@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookmarks_title">बुकमार्क</string>
+    <string name="bookmarks_empty_title">अभी कोई बुकमार्क नहीं</string>
+    <string name="bookmarks_empty_message">किसी भी पेज को बुकमार्क करने के लिए मेनू का उपयोग करें।</string>
+</resources>

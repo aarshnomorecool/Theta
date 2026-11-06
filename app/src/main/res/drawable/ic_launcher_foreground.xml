@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A marigold theta on indigo: the Neel palette. Placeholder until the final name and brand mark are decided. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F2B53A"
+        android:pathData="M54,28c-14,0 -22,11.6 -22,26s8,26 22,26 22,-11.6 22,-26 -8,-26 -22,-26zM54,35c8,0 13.6,6.6 14.8,15L39.2,50C40.4,41.6 46,35 54,35zM54,73c-8,0 -13.6,-6.6 -14.8,-15l29.6,0C67.6,66.4 62,73 54,73z" />
+</vector>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_title">हिस्ट्री</string>
+    <string name="history_search">हिस्ट्री में खोजें</string>
+    <string name="history_empty_title">अभी कोई हिस्ट्री नहीं</string>
+    <string name="history_no_matches">आपकी खोज से कुछ नहीं मिला</string>
+    <string name="history_empty_message">आपके देखे गए पेज यहां दिखेंगे। ये इसी फ़ोन पर रहते हैं।</string>
+    <string name="history_clear_title">सारी हिस्ट्री साफ़ करें?</string>
+    <string name="history_clear_message">इसे वापस नहीं किया जा सकता।</string>
+</resources>

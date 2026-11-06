@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_title">История</string>
+    <string name="history_search">Поиск в истории</string>
+    <string name="history_empty_title">История пока пуста</string>
+    <string name="history_no_matches">Ничего не найдено</string>
+    <string name="history_empty_message">Здесь появятся посещённые страницы. Они хранятся только на этом телефоне.</string>
+    <string name="history_clear_title">Очистить всю историю?</string>
+    <string name="history_clear_message">Это действие нельзя отменить.</string>
+</resources>

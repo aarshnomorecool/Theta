@@ -1,6 +1,10 @@
 # Layered on detekt's defaults (buildUponDefaultConfig). Only deviations are listed here.
 
 complexity:
+  CyclomaticComplexMethod:
+    # An event dispatcher's when is long but not complex, and screens branch on what they show.
+    ignoreSimpleWhenEntries: true
+    ignoreAnnotated: ['Composable']
   LongParameterList:
     # Composables hoist state and Hilt supplies @Inject constructors, so long lists are not a design smell there.
     ignoreAnnotated: ['Composable', 'Inject']
@@ -15,12 +19,18 @@ complexity:
     thresholdInObjects: 20
 
 naming:
+  MatchingDeclarationName:
+    # Files are named after their composable; a small test-tag object may be the only class in them.
+    active: false
   FunctionNaming:
     ignoreAnnotated: ['Composable']
   TopLevelPropertyNaming:
     constantPattern: '[A-Z][_A-Za-z0-9]*'
 
 style:
+  MaxLineLength:
+    # Vector path data is not meaningfully wrappable.
+    excludes: ['**/ThetaIcons.kt']
   ReturnCount:
     # Parsers read best as a run of early exits.
     max: 5
@@ -31,8 +41,9 @@ style:
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     ignoreEnums: true
+    ignoreAnnotated: ['Preview', 'ThemePreviews']
   UnusedPrivateMember:
-    ignoreAnnotated: ['Preview']
+    ignoreAnnotated: ['Preview', 'ThemePreviews']
 
 exceptions:
   TooGenericExceptionCaught:

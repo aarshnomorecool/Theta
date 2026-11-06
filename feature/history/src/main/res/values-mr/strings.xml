@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_title">इतिहास</string>
+    <string name="history_search">इतिहासात शोधा</string>
+    <string name="history_empty_title">अद्याप इतिहास नाही</string>
+    <string name="history_no_matches">तुमच्या शोधाशी काहीही जुळत नाही</string>
+    <string name="history_empty_message">तुम्ही पाहिलेली पेज येथे दिसतील. ती याच फोनवर राहतात.</string>
+    <string name="history_clear_title">सर्व इतिहास साफ करायचा?</string>
+    <string name="history_clear_message">हे पूर्ववत करता येणार नाही.</string>
+</resources>

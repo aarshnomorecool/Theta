@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="speed_dial_title">Экспресс-панель</string>
+    <string name="speed_dial_add">Добавить</string>
+    <string name="speed_dial_add_title">Добавить сайт</string>
+    <string name="speed_dial_address">Веб-адрес</string>
+    <string name="speed_dial_name">Название (необязательно)</string>
+    <string name="speed_dial_remove_message">Удалить этот сайт с экспресс-панели?</string>
+    <string name="recent_sites_title">Недавние сайты</string>
+</resources>

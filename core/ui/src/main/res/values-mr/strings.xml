@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_back">मागे</string>
+    <string name="action_cancel">रद्द करा</string>
+    <string name="action_delete">हटवा</string>
+    <string name="action_clear_all">सर्व साफ करा</string>
+    <string name="action_close">बंद करा</string>
+    <string name="action_search">शोधा</string>
+</resources>

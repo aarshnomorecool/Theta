@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_title">डाउनलोड</string>
+    <string name="downloads_empty_title">अभी कोई डाउनलोड नहीं</string>
+    <string name="downloads_empty_message">आपकी डाउनलोड की गई फ़ाइलें यहां दिखेंगी।</string>
+    <string name="downloads_failed">डाउनलोड विफल रहा</string>
+    <string name="downloads_paused">नेटवर्क का इंतज़ार है</string>
+    <string name="downloads_remove">सूची से हटाएं</string>
+    <string name="downloads_file_missing">यह फ़ाइल अब आपके फ़ोन पर नहीं है</string>
+    <string name="downloads_no_app">इस फ़ोन का कोई ऐप यह फ़ाइल नहीं खोल सकता</string>
+</resources>

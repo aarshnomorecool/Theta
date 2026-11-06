@@ -3,6 +3,7 @@ package com.seasaw.theta.core.webview
 import android.content.Context
 import android.content.MutableContextWrapper
 import android.view.ContextThemeWrapper
+import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -56,9 +57,8 @@ class WebViewFactory @Inject constructor(
             }
         }
 
-        val mobileUserAgent = webView.settings.userAgentString
         LockedWebSettings.apply(webView.settings)
-        webView.settings.applyPreferences(preferences, mobileUserAgent)
+        webView.settings.applyPreferences(preferences, WebSettings.getDefaultUserAgent(appContext))
 
         webView.webViewClient = ThetaWebViewClient(events, interceptor, externalLinks, onRendererGone)
         webView.webChromeClient = ThetaWebChromeClient(
@@ -78,8 +78,7 @@ class WebViewFactory @Inject constructor(
 
     /** Applies changed preferences to a live WebView. Dark mode needs a new WebView instead, see [WebViewPool]. */
     fun update(webView: WebView, preferences: TabPreferences) {
-        val current = webView.settings.userAgentString
-        webView.settings.applyPreferences(preferences, mobileUserAgentFrom(current))
+        webView.settings.applyPreferences(preferences, WebSettings.getDefaultUserAgent(appContext))
     }
 
     /** Points the WebView's context at [host], or back at the application when [host] is null. */
@@ -89,14 +88,6 @@ class WebViewFactory @Inject constructor(
 
     private fun themed(base: Context, darkMode: Boolean): Context =
         ContextThemeWrapper(base, if (darkMode) R.style.ThetaWebViewDark else R.style.ThetaWebViewLight)
-
-    private fun mobileUserAgentFrom(current: String): String = if (current.contains("Android")) {
-        current
-    } else {
-        WebView(appContext).run {
-            settings.userAgentString.also { destroy() }
-        }
-    }
 
     private fun lockServiceWorkersOnce() {
         if (serviceWorkersLocked.compareAndSet(false, true)) {

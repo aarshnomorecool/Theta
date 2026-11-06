@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookmarks_title">Закладки</string>
+    <string name="bookmarks_empty_title">Закладок пока нет</string>
+    <string name="bookmarks_empty_message">Чтобы добавить страницу в закладки, откройте меню.</string>
+</resources>

@@ -97,7 +97,8 @@ internal object UserAgents {
 
 internal fun WebSettings.applyPreferences(preferences: TabPreferences, mobileUserAgent: String) {
     textZoom = preferences.textZoomPercent
-    userAgentString = if (preferences.desktopMode) UserAgents.desktop(mobileUserAgent) else mobileUserAgent
+    val wantedUserAgent = if (preferences.desktopMode) UserAgents.desktop(mobileUserAgent) else mobileUserAgent
+    if (userAgentString != wantedUserAgent) userAgentString = wantedUserAgent
     loadsImagesAutomatically = !preferences.liteMode
     blockNetworkImage = preferences.liteMode
     if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {

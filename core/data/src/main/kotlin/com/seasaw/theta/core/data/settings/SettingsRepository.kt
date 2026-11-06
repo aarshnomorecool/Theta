@@ -34,36 +34,58 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         .catch { failure -> if (failure is IOException) emit(emptyPreferences()) else throw failure }
         .map(::toUserSettings)
 
-    suspend fun setThemeMode(mode: ThemeMode) = store.edit { it[Keys.THEME_MODE] = mode.id }
-    suspend fun setLanguage(language: AppLanguage) = store.edit { it[Keys.LANGUAGE] = language.id }
-    suspend fun setSearchEngine(engine: SearchEngine) = store.edit { it[Keys.SEARCH_ENGINE] = engine.id }
-    suspend fun setAdBlockEnabled(enabled: Boolean) = store.edit { it[Keys.ADBLOCK_ENABLED] = enabled }
-    suspend fun setLiteMode(enabled: Boolean) = store.edit { it[Keys.LITE_MODE] = enabled }
-    suspend fun setClearOnExit(enabled: Boolean) = store.edit { it[Keys.CLEAR_ON_EXIT] = enabled }
-    suspend fun setDiagnosticsConsent(enabled: Boolean) = store.edit { it[Keys.DIAGNOSTICS_CONSENT] = enabled }
-    suspend fun markFirstSessionCompleted() = store.edit { it[Keys.FIRST_SESSION_COMPLETED] = true }
-
-    suspend fun setTextZoomPercent(percent: Int) = store.edit {
-        it[Keys.TEXT_ZOOM] = percent.coerceIn(UserSettings.MIN_TEXT_ZOOM, UserSettings.MAX_TEXT_ZOOM)
+    suspend fun setThemeMode(mode: ThemeMode) {
+        store.edit { it[Keys.THEME_MODE] = mode.id }
+    }
+    suspend fun setLanguage(language: AppLanguage) {
+        store.edit { it[Keys.LANGUAGE] = language.id }
+    }
+    suspend fun setSearchEngine(engine: SearchEngine) {
+        store.edit { it[Keys.SEARCH_ENGINE] = engine.id }
+    }
+    suspend fun setAdBlockEnabled(enabled: Boolean) {
+        store.edit { it[Keys.ADBLOCK_ENABLED] = enabled }
+    }
+    suspend fun setLiteMode(enabled: Boolean) {
+        store.edit { it[Keys.LITE_MODE] = enabled }
+    }
+    suspend fun setClearOnExit(enabled: Boolean) {
+        store.edit { it[Keys.CLEAR_ON_EXIT] = enabled }
+    }
+    suspend fun setDiagnosticsConsent(enabled: Boolean) {
+        store.edit { it[Keys.DIAGNOSTICS_CONSENT] = enabled }
+    }
+    suspend fun markFirstSessionCompleted() {
+        store.edit { it[Keys.FIRST_SESSION_COMPLETED] = true }
     }
 
-    suspend fun acceptPrivacyNotice(diagnosticsConsent: Boolean) = store.edit {
-        it[Keys.PRIVACY_NOTICE_ACCEPTED] = true
-        it[Keys.DIAGNOSTICS_CONSENT] = diagnosticsConsent
+    suspend fun setTextZoomPercent(percent: Int) {
+        store.edit {
+            it[Keys.TEXT_ZOOM] = percent.coerceIn(UserSettings.MIN_TEXT_ZOOM, UserSettings.MAX_TEXT_ZOOM)
+        }
+    }
+
+    suspend fun acceptPrivacyNotice(diagnosticsConsent: Boolean) {
+        store.edit {
+            it[Keys.PRIVACY_NOTICE_ACCEPTED] = true
+            it[Keys.DIAGNOSTICS_CONSENT] = diagnosticsConsent
+        }
     }
 
     /**
      * Resets every preference except the privacy answer and first-session marker. Keeping them means "delete all my
      * data" does not re-prompt for consent or qualify the next launch as a first session for the ads rules.
      */
-    suspend fun resetToDefaults() = store.edit { preferences ->
-        val accepted = preferences[Keys.PRIVACY_NOTICE_ACCEPTED]
-        val consent = preferences[Keys.DIAGNOSTICS_CONSENT]
-        val firstSessionDone = preferences[Keys.FIRST_SESSION_COMPLETED]
-        preferences.clear()
-        accepted?.let { preferences[Keys.PRIVACY_NOTICE_ACCEPTED] = it }
-        consent?.let { preferences[Keys.DIAGNOSTICS_CONSENT] = it }
-        firstSessionDone?.let { preferences[Keys.FIRST_SESSION_COMPLETED] = it }
+    suspend fun resetToDefaults() {
+        store.edit { preferences ->
+            val accepted = preferences[Keys.PRIVACY_NOTICE_ACCEPTED]
+            val consent = preferences[Keys.DIAGNOSTICS_CONSENT]
+            val firstSessionDone = preferences[Keys.FIRST_SESSION_COMPLETED]
+            preferences.clear()
+            accepted?.let { preferences[Keys.PRIVACY_NOTICE_ACCEPTED] = it }
+            consent?.let { preferences[Keys.DIAGNOSTICS_CONSENT] = it }
+            firstSessionDone?.let { preferences[Keys.FIRST_SESSION_COMPLETED] = it }
+        }
     }
 
     private fun toUserSettings(preferences: Preferences): UserSettings {

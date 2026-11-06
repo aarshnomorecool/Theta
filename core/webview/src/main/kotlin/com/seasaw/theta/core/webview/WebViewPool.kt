@@ -114,6 +114,11 @@ class WebViewPool @Inject constructor(
         if (wasIncognito && incognitoTabs.isEmpty()) incognito.wipeAfterSession()
     }
 
+    /** Saves and destroys every live WebView, for when the screen that owns these tabs goes away for good. */
+    suspend fun releaseAll() {
+        live.keys.toList().forEach { evict(it) }
+    }
+
     /** Called from onTrimMemory. Everything but the visible tab gives up its WebView. */
     suspend fun trimToVisible(visibleTabId: String?) {
         tracker.allExcept(visibleTabId).forEach { evict(it) }

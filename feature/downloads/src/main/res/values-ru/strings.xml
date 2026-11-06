@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_title">Загрузки</string>
+    <string name="downloads_empty_title">Загрузок пока нет</string>
+    <string name="downloads_empty_message">Здесь появятся скачанные файлы.</string>
+    <string name="downloads_failed">Ошибка загрузки</string>
+    <string name="downloads_paused">Ожидание сети</string>
+    <string name="downloads_remove">Убрать из списка</string>
+    <string name="downloads_file_missing">Этого файла больше нет на телефоне</string>
+    <string name="downloads_no_app">На этом телефоне нет приложения для этого файла</string>
+</resources>

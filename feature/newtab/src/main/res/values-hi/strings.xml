@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="speed_dial_title">स्पीड डायल</string>
+    <string name="speed_dial_add">जोड़ें</string>
+    <string name="speed_dial_add_title">साइट जोड़ें</string>
+    <string name="speed_dial_address">वेब पता</string>
+    <string name="speed_dial_name">नाम (वैकल्पिक)</string>
+    <string name="speed_dial_remove_message">इस साइट को स्पीड डायल से हटाएं?</string>
+    <string name="recent_sites_title">हाल की साइटें</string>
+</resources>

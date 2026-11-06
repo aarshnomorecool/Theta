@@ -6,6 +6,7 @@ import android.webkit.GeolocationPermissions
 import android.webkit.ServiceWorkerController
 import android.webkit.WebStorage
 import android.webkit.WebView
+import androidx.core.content.edit
 import androidx.webkit.ProfileStore
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -49,7 +50,10 @@ class IncognitoProfiles @Inject constructor(
     fun attach(webView: WebView, configureNewProfile: (ServiceWorkerController) -> Unit = {}) {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) return
         val existing = sessionProfile
-        val name = existing ?: "$PROFILE_PREFIX${UUID.randomUUID()}".also { sessionProfile = it }
+        val name = existing ?: "$PROFILE_PREFIX${UUID.randomUUID()}".also {
+            sessionProfile = it
+            markCleanupNeeded(true)
+        }
         val profile = ProfileStore.getInstance().getOrCreateProfile(name)
         if (existing == null) configureNewProfile(profile.serviceWorkerController)
         WebViewCompat.setProfile(webView, name)
@@ -86,14 +90,15 @@ class IncognitoProfiles @Inject constructor(
     }
 
     /**
-     * Deletes the directories of private profiles from earlier processes. Run on every launch, but after the first
-     * frame because it initialises the WebView engine.
+     * Deletes the directories of private profiles from earlier processes. Run on every launch, after the first frame.
+     * Loading the WebView engine is slow, so that only happens when a private session has left something behind.
      *
      * Profiles loaded in this process are skipped rather than failing: their data is gone already, and their
      * directories go on the next launch. There is no default-profile wipe here: without isolation the default profile
      * holds the user's regular logins, and we cannot tell whether an incognito session was involved.
      */
     fun wipeStaleProfiles() {
+        if (!isCleanupNeeded()) return
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) return
         val store = ProfileStore.getInstance()
         store.allProfileNames
@@ -105,7 +110,14 @@ class IncognitoProfiles @Inject constructor(
                     // Loaded in this process, so the next launch gets it. See the class comment.
                 }
             }
+        if (remainingProfiles().isEmpty()) markCleanupNeeded(false)
     }
+
+    private val cleanupPrefs by lazy { context.getSharedPreferences(CLEANUP_PREFS, Context.MODE_PRIVATE) }
+
+    private fun isCleanupNeeded(): Boolean = cleanupPrefs.getBoolean(KEY_CLEANUP_NEEDED, false)
+
+    private fun markCleanupNeeded(needed: Boolean) = cleanupPrefs.edit { putBoolean(KEY_CLEANUP_NEEDED, needed) }
 
     /** Names of private profiles still on disk. Exposed for tests of the wipe guarantee. */
     internal fun remainingProfiles(): List<String> {
@@ -115,6 +127,8 @@ class IncognitoProfiles @Inject constructor(
 
     private companion object {
         const val PROFILE_PREFIX = "theta_incognito_"
+        const val CLEANUP_PREFS = "incognito_cleanup"
+        const val KEY_CLEANUP_NEEDED = "cleanup_needed"
     }
 }
 
