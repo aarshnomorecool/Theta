@@ -1,0 +1,22 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+captures/
+
+# Machine-specific and secret. Never commit these (see product.md, "Git and CI").
+local.properties
+google-services.json
+*.jks
+*.keystore
+keystore.properties
+service-account*.json
+
+# Word lock files
+~$*

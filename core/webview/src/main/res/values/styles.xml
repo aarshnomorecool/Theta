@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        WebViews read isLightTheme from their context, and algorithmic darkening only takes effect when it is false.
+        Their context therefore carries one of these, independently of the app's own Compose theme.
+    -->
+    <style name="ThetaWebViewLight" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:isLightTheme" tools:targetApi="29">true</item>
+    </style>
+
+    <style name="ThetaWebViewDark" parent="android:Theme.Material.NoActionBar">
+        <item name="android:isLightTheme" tools:targetApi="29">false</item>
+    </style>
+</resources>
