@@ -1,0 +1,100 @@
+{
+  "photos": [
+    {
+      "file": "wallpaper_01.webp",
+      "title": "360-degree Panorama of the Southern Sky",
+      "author": "ESO/H.H. Heyer",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:360-degree_Panorama_of_the_Southern_Sky.jpg"
+    },
+    {
+      "file": "wallpaper_02.webp",
+      "title": "Mercury, Venus and the Moon Align",
+      "author": "ESO/Y. Beletsky",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mercury,_Venus_and_the_Moon_Align.jpg"
+    },
+    {
+      "file": "wallpaper_03.webp",
+      "title": "The hidden fires of the Flame Nebula",
+      "author": "ESO/J. Emerson/VISTA.",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_hidden_fires_of_the_Flame_Nebula.jpg"
+    },
+    {
+      "file": "wallpaper_04.webp",
+      "title": "Aurora and perseids",
+      "author": "Stephan Sprinz",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aurora_and_perseids.jpg"
+    },
+    {
+      "file": "wallpaper_05.webp",
+      "title": "Lofoten, Norway (Unsplash)",
+      "author": "Johannes Groll followhansi",
+      "licence": "CC0",
+      "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lofoten,_Norway_(Unsplash).jpg"
+    },
+    {
+      "file": "wallpaper_06.webp",
+      "title": "Maardu Northern lights — Estonia, 2022",
+      "author": "Maxim Bilovitskiy",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Maardu_Northern_lights_%E2%80%94_Estonia,_2022.jpg"
+    },
+    {
+      "file": "wallpaper_07.webp",
+      "title": "Sunset over Trommekilen from Norrkila 6",
+      "author": "W.carter",
+      "licence": "CC0",
+      "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sunset_over_Trommekilen_from_Norrkila_6.jpg"
+    },
+    {
+      "file": "wallpaper_08.webp",
+      "title": "Plaza Pustkowo 1",
+      "author": "Jar.ciurus",
+      "licence": "CC BY 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Plaza_Pustkowo_1.jpg"
+    },
+    {
+      "file": "wallpaper_09.webp",
+      "title": "Himalayas, Cholatse, Nepal",
+      "author": "Vyacheslav Argenberg",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Himalayas,_Cholatse,_Nepal.jpg"
+    },
+    {
+      "file": "wallpaper_10.webp",
+      "title": "Lake Tahoe at morning - 7-2023",
+      "author": "John D.",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lake_Tahoe_at_morning_-_7-2023.jpg"
+    },
+    {
+      "file": "wallpaper_11.webp",
+      "title": "Lake-sherburne-964855",
+      "author": "GlacierNPS",
+      "licence": "Public domain",
+      "licenceUrl": "",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lake-sherburne-964855.jpg"
+    },
+    {
+      "file": "wallpaper_12.webp",
+      "title": "Iceberg in North Star Bay, Greenland",
+      "author": "Jeremy Harbeck",
+      "licence": "Public domain",
+      "licenceUrl": "",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Iceberg_in_North_Star_Bay,_Greenland.jpg"
+    }
+  ]
+}

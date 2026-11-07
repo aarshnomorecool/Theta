@@ -15,21 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -115,21 +104,21 @@ internal fun AddressBar(
     ) {
         when {
             isIncognito -> Icon(
-                ThetaIcons.Incognito,
+                ThetaIcons.Private,
                 stringResource(R.string.incognito_mode),
                 modifier = Modifier.size(18.dp),
                 tint = colors.onSecondaryContainer,
             )
 
             url.startsWith("https://") -> Icon(
-                Icons.Filled.Lock,
+                ThetaIcons.Lock,
                 stringResource(R.string.connection_secure),
                 modifier = Modifier.size(16.dp),
                 tint = colors.onSurfaceVariant,
             )
 
             url.startsWith("http://") -> Icon(
-                Icons.Filled.Warning,
+                ThetaIcons.Warning,
                 stringResource(R.string.connection_not_secure),
                 modifier = Modifier.size(16.dp),
                 tint = colors.error,
@@ -175,15 +164,15 @@ internal fun AddressBar(
             isEditing && text.text.isNotEmpty() -> IconButton(onClick = {
                 text = TextFieldValue()
             }, Modifier.size(32.dp)) {
-                Icon(Icons.Filled.Clear, stringResource(R.string.clear_address), Modifier.size(18.dp))
+                Icon(ThetaIcons.Close, stringResource(R.string.clear_address), Modifier.size(18.dp))
             }
 
             isLoading -> IconButton(onClick = onStop, Modifier.size(32.dp)) {
-                Icon(Icons.Filled.Close, stringResource(R.string.stop_loading), Modifier.size(18.dp))
+                Icon(ThetaIcons.Close, stringResource(R.string.stop_loading), Modifier.size(18.dp))
             }
 
             url.isNotEmpty() -> IconButton(onClick = onReload, Modifier.size(32.dp)) {
-                Icon(Icons.Filled.Refresh, stringResource(R.string.reload), Modifier.size(18.dp))
+                Icon(ThetaIcons.Reload, stringResource(R.string.reload), Modifier.size(18.dp))
             }
         }
     }
@@ -214,24 +203,23 @@ internal fun BrowserToolbar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Row(horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, enabled = canGoBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.go_back))
+                Icon(ThetaIcons.Back, stringResource(R.string.go_back))
             }
             IconButton(onClick = onForward, enabled = canGoForward) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, stringResource(R.string.go_forward))
+                Icon(ThetaIcons.Forward, stringResource(R.string.go_forward))
             }
             IconButton(onClick = onNewTab, Modifier.testTag(BrowserTestTags.NEW_TAB_BUTTON)) {
-                Icon(Icons.Filled.Add, stringResource(R.string.new_tab))
+                Icon(ThetaIcons.Plus, stringResource(R.string.new_tab))
             }
             IconButton(onClick = onShowTabs, Modifier.testTag(BrowserTestTags.TAB_COUNT)) {
                 TabCountBadge(tabCount)
             }
             IconButton(onClick = onMenu, Modifier.testTag(BrowserTestTags.MENU_BUTTON)) {
-                Icon(Icons.Filled.MoreVert, stringResource(R.string.more_options))
+                Icon(ThetaIcons.More, stringResource(R.string.more_options))
             }
         }
     }
@@ -244,13 +232,13 @@ private fun TabCountBadge(count: Int) {
         modifier = Modifier
             .size(24.dp)
             .semantics { contentDescription = label }
-            .border(BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface), RoundedCornerShape(5.dp)),
+            .border(BorderStroke(1.75.dp, LocalContentColor.current), RoundedCornerShape(7.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = count.coerceAtMost(MAX_BADGE_COUNT).toString(),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
@@ -299,11 +287,11 @@ internal fun FindBar(
         }
         IconButton(onClick = {
             onStep(false)
-        }) { Icon(Icons.Filled.KeyboardArrowUp, stringResource(R.string.find_previous)) }
+        }) { Icon(ThetaIcons.ChevronUp, stringResource(R.string.find_previous)) }
         IconButton(onClick = {
             onStep(true)
-        }) { Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.find_next)) }
-        IconButton(onClick = onClose) { Icon(Icons.Filled.Close, stringResource(R.string.find_close)) }
+        }) { Icon(ThetaIcons.ChevronDown, stringResource(R.string.find_next)) }
+        IconButton(onClick = onClose) { Icon(ThetaIcons.Close, stringResource(R.string.find_close)) }
     }
 }
 
@@ -324,7 +312,7 @@ internal fun PageErrorView(isSslError: Boolean, onRetry: () -> Unit, modifier: M
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Filled.Warning,
+                ThetaIcons.Warning,
                 null,
                 tint = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.size(36.dp),

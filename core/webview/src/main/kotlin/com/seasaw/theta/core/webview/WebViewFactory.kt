@@ -73,6 +73,7 @@ class WebViewFactory @Inject constructor(
         webView.setFindListener { activeMatch, totalMatches, isDone ->
             if (isDone) events.onFindResult(activeMatch, totalMatches)
         }
+        webView.setOnLongClickListener { LinkLongPress.handle(webView, events) }
         return webView
     }
 

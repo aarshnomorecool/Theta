@@ -2,7 +2,7 @@
 <resources>
     <string name="address_hint">शोधा किंवा वेब पत्ता लिहा</string>
     <string name="address_hint_incognito">खाजगीरित्या शोधा</string>
-    <string name="incognito_mode">इनकॉग्निटो</string>
+    <string name="incognito_mode">खाजगी</string>
     <string name="connection_secure">सुरक्षित कनेक्शन</string>
     <string name="connection_not_secure">कनेक्शन सुरक्षित नाही</string>
     <string name="clear_address">पत्ता काढा</string>
@@ -23,13 +23,9 @@
     <string name="error_network_title">पेज लोड होऊ शकले नाही</string>
     <string name="error_network_message">तुमचे इंटरनेट कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
     <string name="retry">पुन्हा प्रयत्न करा</string>
-    <string name="tabs_title">टॅब</string>
-    <string name="tabs_close_switcher">टॅबची यादी बंद करा</string>
-    <string name="tabs_regular">टॅब (%1$d)</string>
-    <string name="tabs_incognito">इनकॉग्निटो (%1$d)</string>
     <string name="tabs_none">कोणताही टॅब उघडा नाही</string>
-    <string name="tabs_no_incognito">इनकॉग्निटो टॅब नाहीत. नवीन उघडण्यासाठी + बटण दाबा.</string>
-    <string name="tabs_close_incognito">सर्व इनकॉग्निटो टॅब बंद करा</string>
+    <string name="tabs_no_incognito">खाजगी टॅब कोणतीही हिस्ट्री, कुकी किंवा साइट डेटा ठेवत नाहीत. उघडण्यासाठी + दाबा.</string>
+    <string name="tabs_close_incognito">सर्व खाजगी टॅब बंद करा</string>
     <string name="tabs_close_tab">टॅब बंद करा</string>
     <string name="permission_title">%1$s ला परवानगी द्यायची?</string>
     <string name="permission_message">ही साइट तुमचा %1$s वापरू इच्छिते.</string>
@@ -45,7 +41,7 @@
     <string name="open_app_message">हे पेज %1$s लिंकने एखादे अ‍ॅप उघडू इच्छिते.</string>
     <string name="download_title">ही फाइल डाउनलोड करायची?</string>
     <string name="download_incognito_note">इनकॉग्निटो टॅब बंद केल्यानंतरही फाइल तुमच्या Downloads फोल्डरमध्ये राहील.</string>
-    <string name="menu_new_incognito">नवीन इनकॉग्निटो टॅब</string>
+    <string name="menu_new_incognito">नवीन खाजगी टॅब</string>
     <string name="menu_add_bookmark">बुकमार्क जोडा</string>
     <string name="menu_remove_bookmark">बुकमार्क काढा</string>
     <string name="menu_add_speed_dial">स्पीड डायलमध्ये जोडा</string>
@@ -68,4 +64,73 @@
     <string name="message_download_storage">फाइल डाउनलोड करण्यासाठी Android सेटिंग्जमध्ये स्टोरेजला परवानगी द्या</string>
     <string name="message_no_app">या फोनवरील कोणतेही अ‍ॅप ती लिंक उघडू शकत नाही</string>
     <string name="message_page_reloaded">पेजने काम करणे थांबवले होते, म्हणून Theta ने ते पुन्हा लोड केले</string>
+    <string name="tabs_none_message">नवीन टॅब उघडण्यासाठी + दाबा.</string>
+    <string name="tabs_private_empty_title">खाजगी टॅब नाहीत</string>
+    <string name="switcher_groups">टॅब गट</string>
+    <string name="switcher_done">झाले</string>
+    <string name="switcher_close_all">सर्व टॅब बंद करा</string>
+    <string name="switcher_select">टॅब निवडा</string>
+    <string name="switcher_clear_data">ब्राउझिंग डेटा हटवा</string>
+    <string name="selection_count">%1$d निवडले</string>
+    <string name="selection_cancel">निवडणे थांबवा</string>
+    <string name="selection_all">सर्व</string>
+    <string name="selection_group">निवडलेल्या टॅबचा गट करा</string>
+    <string name="selection_ungroup">निवडलेले टॅब गटातून काढा</string>
+    <string name="selection_close">निवडलेले टॅब बंद करा</string>
+    <string name="close_all_message">हे पूर्ववत करता येणार नाही.</string>
+    <string name="action_close_all">सर्व बंद करा</string>
+    <string name="action_create">तयार करा</string>
+    <string name="action_save">सेव्ह करा</string>
+    <string name="group_new_title">नवीन टॅब गट</string>
+    <string name="group_edit_title">गट बदला</string>
+    <string name="group_name_hint">गटाचे नाव</string>
+    <string name="group_color">रंग</string>
+    <string name="group_pick_title">गटात जोडा</string>
+    <string name="group_pick_new">नवीन गट</string>
+    <string name="group_ungroup">गट काढा</string>
+    <string name="group_close">गट बंद करा</string>
+    <string name="group_new_tab">गटात नवीन टॅब</string>
+    <string name="groups_empty_title">अजून टॅब गट नाहीत</string>
+    <string name="groups_empty_message">संबंधित टॅब एकत्र ठेवा. टॅबवर जास्त वेळ दाबा आणि गट बटण दाबा, किंवा मेन्यूमधून नवीन टॅब गट निवडा.</string>
+    <string name="group_color_grey">राखाडी</string>
+    <string name="group_color_blue">निळा</string>
+    <string name="group_color_red">लाल</string>
+    <string name="group_color_yellow">पिवळा</string>
+    <string name="group_color_green">हिरवा</string>
+    <string name="group_color_pink">गुलाबी</string>
+    <string name="group_color_purple">जांभळा</string>
+    <string name="group_color_cyan">आकाशी</string>
+    <string name="group_color_orange">केशरी</string>
+    <string name="menu_add_to_group">टॅब गटात जोडा</string>
+    <string name="menu_remove_from_group">टॅब गटातून काढा</string>
+    <string name="link_open_new_tab">नवीन टॅबमध्ये उघडा</string>
+    <string name="link_open_private_new_tab">नवीन खाजगी टॅबमध्ये उघडा</string>
+    <string name="link_open_in_group">गटातील नवीन टॅबमध्ये उघडा</string>
+    <string name="link_open_private">खाजगी टॅबमध्ये उघडा</string>
+    <string name="link_copy">लिंक कॉपी करा</string>
+    <string name="link_share">लिंक शेअर करा</string>
+    <string name="message_opened_background">नवीन टॅबमध्ये उघडले</string>
+    <string name="message_link_copied">लिंक कॉपी झाली</string>
+    <string name="zoom_in">पेजचा मजकूर मोठा करा</string>
+    <string name="zoom_out">पेजचा मजकूर लहान करा</string>
+    <plurals name="tab_count">
+        <item quantity="one">%d टॅब</item>
+        <item quantity="other">%d टॅब</item>
+    </plurals>
+    <plurals name="switcher_tabs_label">
+        <item quantity="one">%d उघडा टॅब</item>
+        <item quantity="other">%d उघडे टॅब</item>
+    </plurals>
+    <plurals name="switcher_private_label">
+        <item quantity="one">%d खाजगी टॅब</item>
+        <item quantity="other">%d खाजगी टॅब</item>
+    </plurals>
+    <plurals name="close_all_title">
+        <item quantity="one">%d टॅब बंद करायचा?</item>
+        <item quantity="other">सर्व %d टॅब बंद करायचे?</item>
+    </plurals>
+    <plurals name="close_all_private_title">
+        <item quantity="one">%d खाजगी टॅब बंद करायचा?</item>
+        <item quantity="other">सर्व %d खाजगी टॅब बंद करायचे?</item>
+    </plurals>
 </resources>

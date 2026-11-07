@@ -81,7 +81,7 @@ internal fun ConsentScreen(onContinue: (Boolean) -> Unit) {
                 Text("θ", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Text(stringResource(R.string.consent_title), style = MaterialTheme.typography.headlineSmall)
                 NoticeItem(ThetaIcons.Shield, R.string.consent_device_title, R.string.consent_device_body)
-                NoticeItem(ThetaIcons.Tune, R.string.consent_ads_title, R.string.consent_ads_body)
+                NoticeItem(ThetaIcons.SiteSettings, R.string.consent_ads_title, R.string.consent_ads_body)
                 NoticeItem(ThetaIcons.History, R.string.consent_delete_title, R.string.consent_delete_body)
                 Row(
                     Modifier

@@ -5,6 +5,7 @@ import com.seasaw.theta.core.common.ApplicationScope
 import com.seasaw.theta.core.common.url.UrlUtils
 import com.seasaw.theta.core.config.AppConfig
 import com.seasaw.theta.core.data.AdBlockExemptionsRepository
+import com.seasaw.theta.core.data.PrivacyStatsRepository
 import com.seasaw.theta.core.data.settings.SettingsRepository
 import com.seasaw.theta.core.webview.InterceptedRequest
 import com.seasaw.theta.core.webview.RequestBlocker
@@ -37,6 +38,7 @@ class AdBlocker @Inject constructor(
     private val settings: SettingsRepository,
     private val exemptions: AdBlockExemptionsRepository,
     private val config: AppConfig,
+    private val stats: PrivacyStatsRepository,
     @ApplicationScope private val scope: CoroutineScope,
 ) : RequestBlocker {
     @Volatile
@@ -53,6 +55,7 @@ class AdBlocker @Inject constructor(
     /** Loads filters in the background. Deferred until after the first frame, per the startup budget. */
     fun start() {
         if (!started.compareAndSet(false, true)) return
+        stats.start()
         settings.settings.onEach { enabledByUser = it.adBlockEnabled }.launchIn(scope)
         exemptions.observeHosts().onEach { exemptSites = it.toHashSet() }.launchIn(scope)
         scope.launch {
@@ -84,7 +87,7 @@ class AdBlocker @Inject constructor(
 
         val pageHost = request.pageUrl?.let(UrlUtils::hostOf)
         if (pageHost != null && isExempt(pageHost)) return false
-        return current.shouldBlock(
+        val blocked = current.shouldBlock(
             url = request.url,
             host = host,
             pageUrl = request.pageUrl,
@@ -92,6 +95,9 @@ class AdBlocker @Inject constructor(
             isThirdParty = UrlUtils.isThirdParty(host, pageHost),
             type = request.kind.toResourceType(),
         )
+        // Only a running total is kept, never what was blocked or where.
+        if (blocked) stats.recordBlocked()
+        return blocked
     }
 }
 

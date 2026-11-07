@@ -2,7 +2,7 @@
 <resources>
     <string name="address_hint">Search or type a web address</string>
     <string name="address_hint_incognito">Search privately</string>
-    <string name="incognito_mode">Incognito</string>
+    <string name="incognito_mode">Private</string>
     <string name="connection_secure">Secure connection</string>
     <string name="connection_not_secure">Connection not secure</string>
     <string name="clear_address">Clear address</string>
@@ -23,13 +23,9 @@
     <string name="error_network_title">Page could not load</string>
     <string name="error_network_message">Check your internet connection and try again.</string>
     <string name="retry">Try again</string>
-    <string name="tabs_title">Tabs</string>
-    <string name="tabs_close_switcher">Close tab list</string>
-    <string name="tabs_regular">Tabs (%1$d)</string>
-    <string name="tabs_incognito">Incognito (%1$d)</string>
     <string name="tabs_none">No open tabs</string>
-    <string name="tabs_no_incognito">No incognito tabs. Use the + button to open one.</string>
-    <string name="tabs_close_incognito">Close all incognito tabs</string>
+    <string name="tabs_no_incognito">Private tabs keep no history, cookies or site data. Tap + to open one.</string>
+    <string name="tabs_close_incognito">Close all private tabs</string>
     <string name="tabs_close_tab">Close tab</string>
     <string name="permission_title">Allow %1$s?</string>
     <string name="permission_message">This site wants to use your %1$s.</string>
@@ -45,7 +41,7 @@
     <string name="open_app_message">This page wants to open an app using a %1$s link.</string>
     <string name="download_title">Download this file?</string>
     <string name="download_incognito_note">The file stays in your Downloads folder after you close incognito tabs.</string>
-    <string name="menu_new_incognito">New incognito tab</string>
+    <string name="menu_new_incognito">New private tab</string>
     <string name="menu_add_bookmark">Add bookmark</string>
     <string name="menu_remove_bookmark">Remove bookmark</string>
     <string name="menu_add_speed_dial">Add to speed dial</string>
@@ -68,4 +64,73 @@
     <string name="message_download_storage">Allow storage access in Android Settings to download files</string>
     <string name="message_no_app">No app on this phone can open that link</string>
     <string name="message_page_reloaded">The page stopped working, so Theta reloaded it</string>
+    <string name="tabs_none_message">Tap + to open a new tab.</string>
+    <string name="tabs_private_empty_title">No private tabs</string>
+    <string name="switcher_groups">Tab groups</string>
+    <string name="switcher_done">Done</string>
+    <string name="switcher_close_all">Close all tabs</string>
+    <string name="switcher_select">Select tabs</string>
+    <string name="switcher_clear_data">Delete browsing data</string>
+    <string name="selection_count">%1$d selected</string>
+    <string name="selection_cancel">Stop selecting</string>
+    <string name="selection_all">All</string>
+    <string name="selection_group">Group selected tabs</string>
+    <string name="selection_ungroup">Remove selected tabs from their group</string>
+    <string name="selection_close">Close selected tabs</string>
+    <string name="close_all_message">You can\'t undo this.</string>
+    <string name="action_close_all">Close all</string>
+    <string name="action_create">Create</string>
+    <string name="action_save">Save</string>
+    <string name="group_new_title">New tab group</string>
+    <string name="group_edit_title">Edit group</string>
+    <string name="group_name_hint">Group name</string>
+    <string name="group_color">Colour</string>
+    <string name="group_pick_title">Add to group</string>
+    <string name="group_pick_new">New group</string>
+    <string name="group_ungroup">Ungroup</string>
+    <string name="group_close">Close group</string>
+    <string name="group_new_tab">New tab in group</string>
+    <string name="groups_empty_title">No tab groups yet</string>
+    <string name="groups_empty_message">Keep related tabs together. Long-press a tab and tap the group button, or choose New tab group from the menu.</string>
+    <string name="group_color_grey">Grey</string>
+    <string name="group_color_blue">Blue</string>
+    <string name="group_color_red">Red</string>
+    <string name="group_color_yellow">Yellow</string>
+    <string name="group_color_green">Green</string>
+    <string name="group_color_pink">Pink</string>
+    <string name="group_color_purple">Purple</string>
+    <string name="group_color_cyan">Cyan</string>
+    <string name="group_color_orange">Orange</string>
+    <string name="menu_add_to_group">Add tab to group</string>
+    <string name="menu_remove_from_group">Remove tab from group</string>
+    <string name="link_open_new_tab">Open in new tab</string>
+    <string name="link_open_private_new_tab">Open in new private tab</string>
+    <string name="link_open_in_group">Open in new tab in group</string>
+    <string name="link_open_private">Open in private tab</string>
+    <string name="link_copy">Copy link</string>
+    <string name="link_share">Share link</string>
+    <string name="message_opened_background">Opened in a new tab</string>
+    <string name="message_link_copied">Link copied</string>
+    <string name="zoom_in">Make page text bigger</string>
+    <string name="zoom_out">Make page text smaller</string>
+    <plurals name="tab_count">
+        <item quantity="one">%d tab</item>
+        <item quantity="other">%d tabs</item>
+    </plurals>
+    <plurals name="switcher_tabs_label">
+        <item quantity="one">%d open tab</item>
+        <item quantity="other">%d open tabs</item>
+    </plurals>
+    <plurals name="switcher_private_label">
+        <item quantity="one">%d private tab</item>
+        <item quantity="other">%d private tabs</item>
+    </plurals>
+    <plurals name="close_all_title">
+        <item quantity="one">Close %d tab?</item>
+        <item quantity="other">Close all %d tabs?</item>
+    </plurals>
+    <plurals name="close_all_private_title">
+        <item quantity="one">Close %d private tab?</item>
+        <item quantity="other">Close all %d private tabs?</item>
+    </plurals>
 </resources>

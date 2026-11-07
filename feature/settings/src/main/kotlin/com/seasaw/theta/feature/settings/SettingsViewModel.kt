@@ -6,9 +6,16 @@ import com.seasaw.theta.core.analytics.Analytics
 import com.seasaw.theta.core.analytics.AnalyticsEvent
 import com.seasaw.theta.core.common.url.SearchEngine
 import com.seasaw.theta.core.config.AppConfig
+import com.seasaw.theta.core.data.AdBlockExemptionsRepository
+import com.seasaw.theta.core.data.BundledPhotos
 import com.seasaw.theta.core.data.EraseRequest
 import com.seasaw.theta.core.data.LocalDataEraser
+import com.seasaw.theta.core.data.PhotoCredit
+import com.seasaw.theta.core.data.PrivacyStats
+import com.seasaw.theta.core.data.PrivacyStatsRepository
+import com.seasaw.theta.core.data.SitePermissionsRepository
 import com.seasaw.theta.core.data.settings.AppLanguage
+import com.seasaw.theta.core.data.settings.SettingFlag
 import com.seasaw.theta.core.data.settings.SettingsRepository
 import com.seasaw.theta.core.data.settings.ThemeMode
 import com.seasaw.theta.core.data.settings.UserSettings
@@ -22,10 +29,33 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/** What a site was allowed or refused, for the site settings page. */
+data class SiteDecision(val host: String, val allowed: List<String>, val blocked: List<String>)
+
+enum class SettingsMessage { DATA_CLEARED, STATS_RESET }
+
+/** The boxes on the clear browsing data page. */
+data class ClearSelection(
+    val history: Boolean = true,
+    val tabs: Boolean = true,
+    val siteData: Boolean = true,
+    val bookmarks: Boolean = false,
+    val speedDial: Boolean = false,
+    val downloads: Boolean = false,
+    val sitePreferences: Boolean = false,
+) {
+    val isEmpty: Boolean
+        get() = !(history || tabs || siteData || bookmarks || speedDial || downloads || sitePreferences)
+}
+
 data class SettingsUiState(
     val settings: UserSettings = UserSettings(),
     val privacyPolicyUrl: String = "",
-    val justCleared: Boolean = false,
+    val message: SettingsMessage? = null,
+    val stats: PrivacyStats? = null,
+    val exemptSites: List<String> = emptyList(),
+    val siteDecisions: List<SiteDecision> = emptyList(),
+    val photoCredits: List<PhotoCredit> = emptyList(),
 )
 
 sealed interface SettingsUiEvent {
@@ -36,9 +66,14 @@ sealed interface SettingsUiEvent {
     data class SetLiteMode(val enabled: Boolean) : SettingsUiEvent
     data class SetClearOnExit(val enabled: Boolean) : SettingsUiEvent
     data class SetDiagnostics(val enabled: Boolean) : SettingsUiEvent
-    data object ClearBrowsingData : SettingsUiEvent
+    data class Toggle(val setting: SettingFlag, val enabled: Boolean) : SettingsUiEvent
+    data class SetTextZoom(val percent: Int) : SettingsUiEvent
+    data class Clear(val selection: ClearSelection) : SettingsUiEvent
+    data class RemoveAdException(val host: String) : SettingsUiEvent
+    data class ForgetSite(val host: String) : SettingsUiEvent
     data object DeleteAllData : SettingsUiEvent
-    data object ClearedMessageShown : SettingsUiEvent
+    data object ResetPrivacyStats : SettingsUiEvent
+    data object MessageShown : SettingsUiEvent
     data object DefaultBrowserPromptShown : SettingsUiEvent
 }
 
@@ -48,14 +83,49 @@ class SettingsViewModel @Inject constructor(
     private val eraser: LocalDataEraser,
     private val webDataCleaner: WebDataCleaner,
     private val analytics: Analytics,
+    private val stats: PrivacyStatsRepository,
+    private val exemptions: AdBlockExemptionsRepository,
+    private val permissions: SitePermissionsRepository,
+    photos: BundledPhotos,
     config: AppConfig,
 ) : ViewModel() {
-    private val justCleared = MutableStateFlow(false)
+    private val message = MutableStateFlow<SettingsMessage?>(null)
+    private val credits = MutableStateFlow<List<PhotoCredit>>(emptyList())
 
-    val state: StateFlow<SettingsUiState> = combine(settings.settings, justCleared) { current, cleared ->
-        SettingsUiState(current, config.privacyPolicyUrl, cleared)
+    private val sites = combine(exemptions.observeHosts(), permissions.observeAll()) { exempt, decisions ->
+        exempt.sorted() to decisions.groupBy { it.host }.map { (host, entries) ->
+            SiteDecision(
+                host = host,
+                allowed = entries.filter { it.granted }.map { it.permission },
+                blocked = entries.filterNot { it.granted }.map { it.permission },
+            )
+        }
+    }
+
+    val state: StateFlow<SettingsUiState> = combine(
+        settings.settings,
+        message,
+        stats.stats,
+        sites,
+        credits,
+    ) { current, shown, counts, (exempt, decisions), photoCredits ->
+        SettingsUiState(
+            settings = current,
+            privacyPolicyUrl = config.privacyPolicyUrl,
+            message = shown,
+            stats = counts,
+            exemptSites = exempt,
+            siteDecisions = decisions,
+            photoCredits = photoCredits,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), SettingsUiState())
 
+    init {
+        stats.start()
+        viewModelScope.launch { credits.value = photos.credits() }
+    }
+
+    @Suppress("CyclomaticComplexMethod") // One line per event, which is the clearest form for this.
     fun onEvent(event: SettingsUiEvent) {
         when (event) {
             is SettingsUiEvent.SetTheme -> launchAndTrack(AnalyticsEvent.ThemeChanged(event.mode.id)) {
@@ -82,29 +152,55 @@ class SettingsViewModel @Inject constructor(
 
             is SettingsUiEvent.SetDiagnostics -> viewModelScope.launch { settings.setDiagnosticsConsent(event.enabled) }
 
-            SettingsUiEvent.ClearBrowsingData -> erase(EraseRequest.BrowsingTraces)
+            is SettingsUiEvent.Toggle -> viewModelScope.launch { settings.setFlag(event.setting, event.enabled) }
 
-            SettingsUiEvent.DeleteAllData -> erase(EraseRequest.Everything)
+            is SettingsUiEvent.SetTextZoom -> viewModelScope.launch { settings.setTextZoomPercent(event.percent) }
 
-            SettingsUiEvent.ClearedMessageShown -> justCleared.value = false
+            is SettingsUiEvent.Clear -> clear(event.selection)
+
+            is SettingsUiEvent.RemoveAdException -> viewModelScope.launch { exemptions.removeExemption(event.host) }
+
+            is SettingsUiEvent.ForgetSite -> viewModelScope.launch { permissions.forgetHost(event.host) }
+
+            SettingsUiEvent.DeleteAllData -> erase(EraseRequest.Everything, clearWebData = true)
+
+            SettingsUiEvent.ResetPrivacyStats -> viewModelScope.launch {
+                stats.reset()
+                message.value = SettingsMessage.STATS_RESET
+            }
+
+            SettingsUiEvent.MessageShown -> message.value = null
 
             SettingsUiEvent.DefaultBrowserPromptShown -> analytics.track(AnalyticsEvent.DefaultBrowserPromptShown)
+        }
+    }
+
+    private fun clear(selection: ClearSelection) {
+        if (selection.isEmpty) return
+        val request = EraseRequest(
+            history = selection.history,
+            tabs = selection.tabs,
+            bookmarks = selection.bookmarks,
+            speedDial = selection.speedDial,
+            downloads = selection.downloads,
+            sitePreferences = selection.sitePreferences,
+        )
+        erase(request, clearWebData = selection.siteData)
+    }
+
+    /** Privacy stats are left alone on purpose, even by "delete everything": they have their own reset. */
+    private fun erase(request: EraseRequest, clearWebData: Boolean) {
+        viewModelScope.launch {
+            eraser.erase(request)
+            if (clearWebData) webDataCleaner.clearWebData()
+            analytics.track(AnalyticsEvent.LocalDataCleared)
+            message.value = SettingsMessage.DATA_CLEARED
         }
     }
 
     private fun launchAndTrack(event: AnalyticsEvent, action: suspend () -> Unit) {
         analytics.track(event)
         viewModelScope.launch { action() }
-    }
-
-    /** Both halves are needed: the app's own tables, and what the WebView stores for sites. */
-    private fun erase(request: EraseRequest) {
-        viewModelScope.launch {
-            eraser.erase(request)
-            webDataCleaner.clearWebData()
-            analytics.track(AnalyticsEvent.LocalDataCleared)
-            justCleared.value = true
-        }
     }
 
     private companion object {

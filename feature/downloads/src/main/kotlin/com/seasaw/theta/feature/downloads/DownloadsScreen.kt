@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -154,7 +152,7 @@ private fun DownloadItem(row: DownloadRow, onOpen: (DownloadRow) -> Unit, onEven
             },
         ) {
             Icon(
-                Icons.Filled.Close,
+                ThetaIcons.Close,
                 stringResource(
                     if (row.status ==
                         DownloadStatus.RUNNING

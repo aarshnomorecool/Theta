@@ -1,5 +1,6 @@
 package com.seasaw.theta.core.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -13,7 +14,13 @@ data class TabEntity(
     val position: Int,
     val isSelected: Boolean,
     val lastAccessedAt: Long,
+    /** The group this tab belongs to, if any. Added in schema version 2. */
+    @ColumnInfo(defaultValue = "NULL") val groupId: String? = null,
 )
+
+/** A named, coloured set of tabs. [colorIndex] picks from a fixed palette, so themes can tune the actual colours. */
+@Entity(tableName = "tab_groups")
+data class TabGroupEntity(@PrimaryKey val id: String, val name: String, val colorIndex: Int, val createdAt: Long)
 
 @Entity(
     tableName = "history",

@@ -2,7 +2,7 @@
 <resources>
     <string name="address_hint">Поиск или веб-адрес</string>
     <string name="address_hint_incognito">Приватный поиск</string>
-    <string name="incognito_mode">Инкогнито</string>
+    <string name="incognito_mode">Приватный режим</string>
     <string name="connection_secure">Защищённое соединение</string>
     <string name="connection_not_secure">Соединение не защищено</string>
     <string name="clear_address">Очистить адрес</string>
@@ -23,13 +23,9 @@
     <string name="error_network_title">Не удалось загрузить страницу</string>
     <string name="error_network_message">Проверьте подключение к интернету и повторите попытку.</string>
     <string name="retry">Повторить</string>
-    <string name="tabs_title">Вкладки</string>
-    <string name="tabs_close_switcher">Закрыть список вкладок</string>
-    <string name="tabs_regular">Вкладки (%1$d)</string>
-    <string name="tabs_incognito">Инкогнито (%1$d)</string>
     <string name="tabs_none">Нет открытых вкладок</string>
-    <string name="tabs_no_incognito">Вкладок инкогнито нет. Нажмите +, чтобы открыть новую.</string>
-    <string name="tabs_close_incognito">Закрыть все вкладки инкогнито</string>
+    <string name="tabs_no_incognito">Приватные вкладки не хранят историю, cookie и данные сайтов. Нажмите +, чтобы открыть.</string>
+    <string name="tabs_close_incognito">Закрыть все приватные вкладки</string>
     <string name="tabs_close_tab">Закрыть вкладку</string>
     <string name="permission_title">Разрешить сайту %1$s?</string>
     <string name="permission_message">Этот сайт запрашивает доступ: %1$s.</string>
@@ -45,7 +41,7 @@
     <string name="open_app_message">Эта страница хочет открыть приложение по ссылке %1$s.</string>
     <string name="download_title">Скачать этот файл?</string>
     <string name="download_incognito_note">Файл останется в папке Downloads и после закрытия вкладок инкогнито.</string>
-    <string name="menu_new_incognito">Новая вкладка инкогнито</string>
+    <string name="menu_new_incognito">Новая приватная вкладка</string>
     <string name="menu_add_bookmark">Добавить закладку</string>
     <string name="menu_remove_bookmark">Удалить закладку</string>
     <string name="menu_add_speed_dial">Добавить на экспресс-панель</string>
@@ -68,4 +64,83 @@
     <string name="message_download_storage">Чтобы скачивать файлы, разрешите доступ к хранилищу в настройках Android</string>
     <string name="message_no_app">На этом телефоне нет приложения для этой ссылки</string>
     <string name="message_page_reloaded">Страница перестала работать, и Theta перезагрузил её</string>
+    <string name="tabs_none_message">Нажмите +, чтобы открыть новую вкладку.</string>
+    <string name="tabs_private_empty_title">Нет приватных вкладок</string>
+    <string name="switcher_groups">Группы вкладок</string>
+    <string name="switcher_done">Готово</string>
+    <string name="switcher_close_all">Закрыть все вкладки</string>
+    <string name="switcher_select">Выбрать вкладки</string>
+    <string name="switcher_clear_data">Удалить данные браузера</string>
+    <string name="selection_count">Выбрано: %1$d</string>
+    <string name="selection_cancel">Отменить выбор</string>
+    <string name="selection_all">Все</string>
+    <string name="selection_group">Сгруппировать выбранные вкладки</string>
+    <string name="selection_ungroup">Убрать выбранные вкладки из группы</string>
+    <string name="selection_close">Закрыть выбранные вкладки</string>
+    <string name="close_all_message">Это действие нельзя отменить.</string>
+    <string name="action_close_all">Закрыть все</string>
+    <string name="action_create">Создать</string>
+    <string name="action_save">Сохранить</string>
+    <string name="group_new_title">Новая группа вкладок</string>
+    <string name="group_edit_title">Изменить группу</string>
+    <string name="group_name_hint">Название группы</string>
+    <string name="group_color">Цвет</string>
+    <string name="group_pick_title">Добавить в группу</string>
+    <string name="group_pick_new">Новая группа</string>
+    <string name="group_ungroup">Разгруппировать</string>
+    <string name="group_close">Закрыть группу</string>
+    <string name="group_new_tab">Новая вкладка в группе</string>
+    <string name="groups_empty_title">Групп вкладок пока нет</string>
+    <string name="groups_empty_message">Держите похожие вкладки вместе. Нажмите и удерживайте вкладку, затем кнопку группы, или выберите «Новая группа вкладок» в меню.</string>
+    <string name="group_color_grey">Серый</string>
+    <string name="group_color_blue">Синий</string>
+    <string name="group_color_red">Красный</string>
+    <string name="group_color_yellow">Жёлтый</string>
+    <string name="group_color_green">Зелёный</string>
+    <string name="group_color_pink">Розовый</string>
+    <string name="group_color_purple">Фиолетовый</string>
+    <string name="group_color_cyan">Бирюзовый</string>
+    <string name="group_color_orange">Оранжевый</string>
+    <string name="menu_add_to_group">Добавить вкладку в группу</string>
+    <string name="menu_remove_from_group">Убрать вкладку из группы</string>
+    <string name="link_open_new_tab">Открыть в новой вкладке</string>
+    <string name="link_open_private_new_tab">Открыть в новой приватной вкладке</string>
+    <string name="link_open_in_group">Открыть в новой вкладке группы</string>
+    <string name="link_open_private">Открыть в приватной вкладке</string>
+    <string name="link_copy">Копировать ссылку</string>
+    <string name="link_share">Поделиться ссылкой</string>
+    <string name="message_opened_background">Открыто в новой вкладке</string>
+    <string name="message_link_copied">Ссылка скопирована</string>
+    <string name="zoom_in">Увеличить текст страницы</string>
+    <string name="zoom_out">Уменьшить текст страницы</string>
+    <plurals name="tab_count">
+        <item quantity="one">%d вкладка</item>
+        <item quantity="few">%d вкладки</item>
+        <item quantity="many">%d вкладок</item>
+        <item quantity="other">%d вкладки</item>
+    </plurals>
+    <plurals name="switcher_tabs_label">
+        <item quantity="one">%d открытая вкладка</item>
+        <item quantity="few">%d открытые вкладки</item>
+        <item quantity="many">%d открытых вкладок</item>
+        <item quantity="other">%d открытой вкладки</item>
+    </plurals>
+    <plurals name="switcher_private_label">
+        <item quantity="one">%d приватная вкладка</item>
+        <item quantity="few">%d приватные вкладки</item>
+        <item quantity="many">%d приватных вкладок</item>
+        <item quantity="other">%d приватной вкладки</item>
+    </plurals>
+    <plurals name="close_all_title">
+        <item quantity="one">Закрыть %d вкладку?</item>
+        <item quantity="few">Закрыть все %d вкладки?</item>
+        <item quantity="many">Закрыть все %d вкладок?</item>
+        <item quantity="other">Закрыть все %d вкладки?</item>
+    </plurals>
+    <plurals name="close_all_private_title">
+        <item quantity="one">Закрыть %d приватную вкладку?</item>
+        <item quantity="few">Закрыть все %d приватные вкладки?</item>
+        <item quantity="many">Закрыть все %d приватных вкладок?</item>
+        <item quantity="other">Закрыть все %d приватной вкладки?</item>
+    </plurals>
 </resources>

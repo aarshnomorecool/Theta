@@ -59,6 +59,10 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         store.edit { it[Keys.HISTORY_GROUPED] = grouped }
     }
 
+    suspend fun setFlag(flag: SettingFlag, enabled: Boolean) {
+        store.edit { it[flag.key] = enabled }
+    }
+
     suspend fun markFirstSessionCompleted() {
         store.edit { it[Keys.FIRST_SESSION_COMPLETED] = true }
     }
@@ -106,8 +110,17 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
             diagnosticsConsent = preferences[Keys.DIAGNOSTICS_CONSENT] ?: defaults.diagnosticsConsent,
             firstSessionCompleted = preferences[Keys.FIRST_SESSION_COMPLETED] ?: defaults.firstSessionCompleted,
             historyGroupedBySite = preferences[Keys.HISTORY_GROUPED] ?: defaults.historyGroupedBySite,
+            ntpBackgroundPhotos = preferences.flag(SettingFlag.NTP_PHOTOS),
+            ntpShowPrivacyStats = preferences.flag(SettingFlag.NTP_STATS),
+            ntpShowRecentSites = preferences.flag(SettingFlag.NTP_RECENT),
+            tabPreviews = preferences.flag(SettingFlag.TAB_PREVIEWS),
+            blockAutoplay = preferences.flag(SettingFlag.BLOCK_AUTOPLAY),
+            highContrast = preferences.flag(SettingFlag.HIGH_CONTRAST),
+            showZoomButtons = preferences.flag(SettingFlag.ZOOM_BUTTONS),
         )
     }
+
+    private fun Preferences.flag(flag: SettingFlag): Boolean = this[flag.key] ?: flag.default
 
     private object Keys {
         val THEME_MODE = stringPreferencesKey("theme_mode")

@@ -67,4 +67,7 @@ interface TabEvents {
 
     /** The renderer died, usually from memory pressure. This tab's WebView is unusable and has been destroyed. */
     fun onRendererGone()
+
+    /** The user long-pressed a web link. Only http and https addresses are reported. */
+    fun onLinkLongPressed(url: String) = Unit
 }

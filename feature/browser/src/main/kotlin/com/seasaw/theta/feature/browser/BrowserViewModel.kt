@@ -1,5 +1,6 @@
 package com.seasaw.theta.feature.browser
 
+import android.graphics.Bitmap
 import android.webkit.URLUtil
 import android.webkit.WebView
 import androidx.lifecycle.ViewModel
@@ -17,11 +18,14 @@ import com.seasaw.theta.core.data.AdBlockExemptionsRepository
 import com.seasaw.theta.core.data.BookmarksRepository
 import com.seasaw.theta.core.data.DownloadsRepository
 import com.seasaw.theta.core.data.EraseRequest
+import com.seasaw.theta.core.data.FaviconStore
 import com.seasaw.theta.core.data.HistoryRepository
 import com.seasaw.theta.core.data.LocalDataEraser
 import com.seasaw.theta.core.data.SpeedDialRepository
+import com.seasaw.theta.core.data.TabPreviewStore
 import com.seasaw.theta.core.data.TabsRepository
 import com.seasaw.theta.core.data.db.TabEntity
+import com.seasaw.theta.core.data.db.TabGroupEntity
 import com.seasaw.theta.core.data.settings.SettingsRepository
 import com.seasaw.theta.core.webview.DownloadEnqueuer
 import com.seasaw.theta.core.webview.ExternalLaunchResult
@@ -72,6 +76,8 @@ class BrowserViewModel @Inject constructor(
     private val downloadEnqueuer: DownloadEnqueuer,
     private val externalLinks: ExternalLinks,
     private val analytics: Analytics,
+    private val previewStore: TabPreviewStore,
+    private val faviconStore: FaviconStore,
     @ApplicationScope private val appScope: CoroutineScope,
     @MainDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -80,6 +86,15 @@ class BrowserViewModel @Inject constructor(
 
     private var searchEngine = SearchEngine.Default
     private var isDarkTheme = false
+    private var allowAutoplay = false
+
+    private val groupActions = TabGroupActions(
+        state = { state.value },
+        update = { transform -> _state.update(transform) },
+        openNewTab = { isIncognito, groupId -> newTab(isIncognito, groupId = groupId) },
+        closeTabs = ::closeTabs,
+        save = ::saveTabsSoon,
+    )
 
     init {
         observeSettings()
@@ -111,13 +126,37 @@ class BrowserViewModel @Inject constructor(
 
             is BrowserUiEvent.OpenUrl -> navigateSelected(event.url)
 
-            is BrowserUiEvent.NewTab -> newTab(event.isIncognito)
+            is BrowserUiEvent.NewTab -> newTab(event.isIncognito, groupId = event.groupId)
 
             is BrowserUiEvent.SelectTab -> select(event.id)
 
-            is BrowserUiEvent.CloseTab -> closeTab(event.id)
+            is BrowserUiEvent.CloseTab -> closeTabs(setOf(event.id))
 
-            BrowserUiEvent.CloseIncognitoTabs -> closeIncognitoTabs()
+            is BrowserUiEvent.CloseTabs -> closeTabs(event.ids)
+
+            is BrowserUiEvent.CloseAllTabs ->
+                closeTabs(state.value.tabs.filter { it.isIncognito == event.isIncognito }.map { it.id }.toSet())
+
+            is BrowserUiEvent.CreateGroup ->
+                groupActions.create(event.tabIds, event.name, event.colorIndex, event.isIncognito)
+
+            is BrowserUiEvent.AddToGroup -> groupActions.addTo(event.tabIds, event.groupId)
+
+            is BrowserUiEvent.RemoveFromGroup -> groupActions.remove(event.tabIds)
+
+            is BrowserUiEvent.EditGroup -> groupActions.edit(event.id, event.name, event.colorIndex)
+
+            is BrowserUiEvent.Ungroup -> groupActions.ungroup(event.id)
+
+            is BrowserUiEvent.CloseGroup -> groupActions.close(event.id)
+
+            is BrowserUiEvent.OpenLink -> openLink(event.url, event.target)
+
+            BrowserUiEvent.DismissLinkMenu -> _state.update { it.copy(linkMenuUrl = null) }
+
+            BrowserUiEvent.LinkCopied -> showMessage(BrowserMessage.LINK_COPIED)
+
+            is BrowserUiEvent.PreviewCaptured -> previewCaptured(event.tabId, event.preview)
 
             BrowserUiEvent.GoBack -> goBack()
 
@@ -129,7 +168,10 @@ class BrowserViewModel @Inject constructor(
 
             BrowserUiEvent.StopLoading -> selectedWebView()?.stopLoading()
 
-            is BrowserUiEvent.ShowTabSwitcher -> _state.update { it.copy(isTabSwitcherOpen = event.visible) }
+            is BrowserUiEvent.ShowTabSwitcher -> {
+                _state.update { it.copy(isTabSwitcherOpen = event.visible) }
+                if (event.visible) loadStoredPreviews()
+            }
 
             BrowserUiEvent.ToggleBookmark -> toggleBookmark()
 
@@ -183,12 +225,16 @@ class BrowserViewModel @Inject constructor(
     private fun observeSettings() {
         settings.settings.onEach { current ->
             searchEngine = current.searchEngine
+            allowAutoplay = !current.blockAutoplay
             webViewFactory.setLiteMode(current.liteMode)
             _state.update {
                 it.copy(
                     isLiteMode = current.liteMode,
                     isAdBlockEnabled = current.adBlockEnabled,
                     textZoomPercent = current.textZoomPercent,
+                    isTabPreviewsEnabled = current.tabPreviews,
+                    showZoomButtons = current.showZoomButtons,
+                    previews = if (current.tabPreviews) it.previews else emptyMap(),
                 )
             }
             refreshLivePreferences()
@@ -215,12 +261,31 @@ class BrowserViewModel @Inject constructor(
             webDataCleaner.clearWebData()
         }
         val saved = tabsRepository.restore()
-        val restored = saved.map { BrowserTab(id = it.id, url = it.url, title = it.title) }
-        val savedSelection = saved.firstOrNull { it.isSelected }?.id ?: restored.lastOrNull()?.id
+        val groups = saved.groups.map { TabGroup(it.id, it.name, it.colorIndex) }
+        val groupIds = groups.map { it.id }.toSet()
+        val restored = saved.tabs.map { entity ->
+            BrowserTab(
+                id = entity.id,
+                url = entity.url,
+                title = entity.title,
+                groupId = entity.groupId?.takeIf { it in groupIds },
+            )
+        }
+        val savedSelection = saved.tabs.firstOrNull { it.isSelected }?.id ?: restored.lastOrNull()?.id
         // A link from another app may already have opened a tab while this was reading the database. It must survive.
-        _state.update { it.copy(tabs = restored + it.tabs, selectedTabId = it.selectedTabId ?: savedSelection) }
+        _state.update {
+            it.copy(
+                tabs = restored + it.tabs,
+                groups = TabGroupRules.prune(restored, groups) + it.groups,
+                selectedTabId = it.selectedTabId ?: savedSelection,
+            )
+        }
         val selected = state.value.selectedTabId
         if (selected == null) newTab(isIncognito = false) else showTab(selected)
+        restored.forEach { tab ->
+            val host = UrlUtils.hostOf(tab.url) ?: return@forEach
+            faviconStore.loadFor(host)?.let { icon -> updateTab(tab.id) { it.copy(favicon = it.favicon ?: icon) } }
+        }
     }
 
     private fun submit(text: String) {
@@ -242,22 +307,60 @@ class BrowserViewModel @Inject constructor(
         }
     }
 
-    private fun newTab(isIncognito: Boolean, initialUrl: String? = null) {
+    /**
+     * @param inBackground leaves the current tab on screen. The new tab gets no WebView until it is first shown, so a
+     * stack of links opened this way costs almost nothing.
+     */
+    private fun newTab(
+        isIncognito: Boolean,
+        initialUrl: String? = null,
+        groupId: String? = null,
+        inBackground: Boolean = false,
+    ) {
         val current = state.value
-        val reusable = TabListRules.reusableNewTab(current.tabs, isIncognito).takeIf { initialUrl == null }
+        val reusable = TabListRules.reusableNewTab(current.tabs, isIncognito, groupId).takeIf { initialUrl == null }
         if (reusable != null) {
             select(reusable.id)
             return
         }
-        val tab = BrowserTab(id = UUID.randomUUID().toString(), url = initialUrl.orEmpty(), isIncognito = isIncognito)
-        _state.update { it.copy(tabs = it.tabs + tab, selectedTabId = tab.id, isTabSwitcherOpen = false, find = null) }
+        val tab = BrowserTab(
+            id = UUID.randomUUID().toString(),
+            url = initialUrl.orEmpty(),
+            isIncognito = isIncognito,
+            groupId = groupId,
+            title = initialUrl?.let(UrlUtils::displayUrl).orEmpty(),
+        )
+        _state.update {
+            val tabs = it.tabs.toMutableList().apply { add(TabGroupRules.insertionIndex(it.tabs, groupId), tab) }
+            if (inBackground) {
+                it.copy(tabs = tabs)
+            } else {
+                it.copy(tabs = tabs, selectedTabId = tab.id, isTabSwitcherOpen = false, find = null)
+            }
+        }
         // Asked only here because the check loads the WebView engine, which must not happen during startup.
         if (isIncognito) _state.update { it.copy(isIncognitoIsolationSupported = incognito.isIsolationSupported) }
         analytics.track(AnalyticsEvent.TabOpened(isIncognito))
         viewModelScope.launch {
-            showTab(tab.id)
+            if (!inBackground) showTab(tab.id)
             persistTabs()
         }
+    }
+
+    private fun openLink(url: String, target: LinkTarget) {
+        val source = state.value.selectedTab ?: return
+        _state.update { it.copy(linkMenuUrl = null) }
+        when (target) {
+            LinkTarget.NEW_TAB -> newTab(source.isIncognito, url, groupId = source.groupId, inBackground = true)
+
+            LinkTarget.NEW_TAB_IN_GROUP -> {
+                val groupId = groupActions.groupForLinkFrom(source)
+                newTab(source.isIncognito, url, groupId = groupId, inBackground = true)
+            }
+
+            LinkTarget.INCOGNITO_TAB -> newTab(isIncognito = true, initialUrl = url)
+        }
+        if (target != LinkTarget.INCOGNITO_TAB) showMessage(BrowserMessage.OPENED_IN_BACKGROUND)
     }
 
     private fun select(id: String) {
@@ -286,22 +389,34 @@ class BrowserViewModel @Inject constructor(
         textZoomPercent = state.value.textZoomPercent,
         desktopMode = tab.isDesktopMode,
         liteMode = state.value.isLiteMode,
+        allowAutoplay = allowAutoplay,
     )
 
-    private fun closeTab(id: String) {
+    private fun closeTabs(ids: Set<String>) {
         val current = state.value
-        val nextSelected = if (current.selectedTabId ==
-            id
-        ) {
-            TabListRules.nextSelection(current.tabs, id)
+        if (current.tabs.none { it.id in ids }) return
+        val selected = current.selectedTabId
+        val nextSelected = if (selected != null && selected in ids) {
+            // The usual neighbour rule, as if the other closed tabs were already gone.
+            TabListRules.nextSelection(current.tabs.filter { it.id == selected || it.id !in ids }, selected)
         } else {
-            current.selectedTabId
+            selected
         }
-        val remaining = current.tabs.filter { it.id != id }
-        _state.update { it.copy(tabs = remaining, selectedTabId = nextSelected) }
-        analytics.track(AnalyticsEvent.TabClosed)
+        val remaining = current.tabs.filter { it.id !in ids }
+        _state.update {
+            it.copy(
+                tabs = remaining,
+                groups = TabGroupRules.prune(remaining, it.groups),
+                selectedTabId = nextSelected,
+                previews = it.previews - ids,
+            )
+        }
+        repeat(ids.size) { analytics.track(AnalyticsEvent.TabClosed) }
         viewModelScope.launch {
-            pool.close(id)
+            ids.forEach { id ->
+                pool.close(id)
+                previewStore.remove(id)
+            }
             if (remaining.isEmpty()) {
                 newTab(isIncognito = false)
             } else if (nextSelected != null) {
@@ -311,8 +426,34 @@ class BrowserViewModel @Inject constructor(
         }
     }
 
-    private fun closeIncognitoTabs() {
-        state.value.tabs.filter { it.isIncognito }.forEach { closeTab(it.id) }
+    private fun previewCaptured(tabId: String, preview: Bitmap) {
+        val tab = tab(tabId) ?: return
+        if (!state.value.isTabPreviewsEnabled || tab.isNewTab) return
+        _state.update { it.copy(previews = it.previews + (tabId to preview)) }
+        if (!tab.isIncognito) viewModelScope.launch { previewStore.save(tabId, preview) }
+    }
+
+    /** Pictures saved in earlier sessions. Private tabs never had any on disk. */
+    private fun loadStoredPreviews() {
+        val current = state.value
+        if (!current.isTabPreviewsEnabled) return
+        val missing = current.tabs.filter { !it.isIncognito && !it.isNewTab && it.id !in current.previews }
+        if (missing.isEmpty()) return
+        viewModelScope.launch {
+            missing.forEach { tab ->
+                val preview = previewStore.load(tab.id) ?: return@forEach
+                _state.update {
+                    if (it.tabs.none { open -> open.id == tab.id }) {
+                        it
+                    } else {
+                        it.copy(
+                            previews =
+                                it.previews + (tab.id to preview),
+                        )
+                    }
+                }
+            }
+        }
     }
 
     /** Called from a system back press. Returns whether there was somewhere to go inside the app. */
@@ -449,13 +590,17 @@ class BrowserViewModel @Inject constructor(
     }
 
     private fun onDataErased(request: EraseRequest) {
-        if (!request.tabs) return
-        state.value.tabs.toList().forEach { closeTab(it.id) }
+        if (request.history) {
+            // The icons on disk are gone; open tabs drop theirs too, so nothing suggests the history survived.
+            _state.update { current -> current.copy(tabs = current.tabs.map { it.copy(favicon = null) }) }
+        }
+        if (request.tabs) closeTabs(state.value.tabs.map { it.id }.toSet())
     }
 
     private suspend fun persistTabs() {
         val current = state.value
-        val saved = current.tabs.filter { !it.isIncognito }.mapIndexed { index, tab ->
+        val regular = current.tabs.filter { !it.isIncognito }
+        val saved = regular.mapIndexed { index, tab ->
             TabEntity(
                 id = tab.id,
                 url = tab.url,
@@ -463,9 +608,14 @@ class BrowserViewModel @Inject constructor(
                 position = index,
                 isSelected = tab.id == current.selectedTabId,
                 lastAccessedAt = 0,
+                groupId = tab.groupId,
             )
         }
-        tabsRepository.save(saved)
+        val usedGroups = regular.mapNotNull { it.groupId }.toSet()
+        val groups = current.groups.filter { !it.isIncognito && it.id in usedGroups }.mapIndexed { index, group ->
+            TabGroupEntity(group.id, group.name, group.colorIndex, createdAt = index.toLong())
+        }
+        tabsRepository.save(saved, groups)
     }
 
     private fun selectedWebView(): WebView? = state.value.selectedTabId?.let(pool::view)
@@ -499,6 +649,21 @@ class BrowserViewModel @Inject constructor(
 
     internal fun saveTabsSoon() {
         viewModelScope.launch { persistTabs() }
+    }
+
+    /** Kept for the tab switcher, and on disk for regular tabs so the new-tab page and history can show it. */
+    internal fun onFavicon(tabId: String, icon: Bitmap) {
+        val tab = tab(tabId) ?: return
+        updateTab(tabId) { it.copy(favicon = icon) }
+        val host = UrlUtils.hostOf(tab.url) ?: return
+        if (!tab.isIncognito) viewModelScope.launch { faviconStore.save(host, icon) }
+    }
+
+    internal fun cachedFavicon(url: String): Bitmap? = UrlUtils.hostOf(url)?.let(faviconStore::cachedFor)
+
+    internal fun onLinkLongPressed(tabId: String, url: String) {
+        val current = state.value
+        if (current.selectedTabId == tabId && current.prompt == null) _state.update { it.copy(linkMenuUrl = url) }
     }
 
     internal fun requestNewWindow(message: android.os.Message, isIncognito: Boolean) {

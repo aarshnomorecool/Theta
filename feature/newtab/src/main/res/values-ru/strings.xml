@@ -7,4 +7,19 @@
     <string name="speed_dial_name">Название (необязательно)</string>
     <string name="speed_dial_remove_message">Удалить этот сайт с экспресс-панели?</string>
     <string name="recent_sites_title">Недавние сайты</string>
+    <string name="top_sites_title">Популярные сайты</string>
+    <string name="stats_title">Статистика приватности</string>
+    <string name="stats_blocked">Заблокировано рекламы и трекеров</string>
+    <string name="stats_data">Сэкономлено трафика</string>
+    <string name="stats_time">Сэкономлено времени</string>
+    <string name="stats_estimated">Трафик и время указаны приблизительно.</string>
+    <string name="stats_since">С %1$s</string>
+    <string name="stats_time_seconds">%1$d с</string>
+    <string name="stats_time_minutes">%1$d мин</string>
+    <string name="stats_time_hours">%1$s ч</string>
+    <string name="photo_credit">%1$s · %2$s</string>
+    <string name="photo_credit_description">Фото: «%1$s», автор %2$s, %3$s. Открывает страницу фото.</string>
+    <string name="pin_title">Добавить на экспресс-панель?</string>
+    <string name="pin_message">%1$s всегда будет на странице новой вкладки.</string>
+    <string name="stats_time_seconds_fraction">%1$s с</string>
 </resources>

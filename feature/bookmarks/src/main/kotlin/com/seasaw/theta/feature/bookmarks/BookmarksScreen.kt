@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -92,7 +90,7 @@ internal fun BookmarksScreen(
             ThetaTopBar(stringResource(R.string.bookmarks_title), onBack)
             if (state.rows.isEmpty()) {
                 EmptyState(
-                    ThetaIcons.BookmarkBorder,
+                    ThetaIcons.Bookmark,
                     stringResource(R.string.bookmarks_empty_title),
                     stringResource(R.string.bookmarks_empty_message),
                     Modifier.weight(1f),
@@ -107,7 +105,7 @@ internal fun BookmarksScreen(
                                 .padding(start = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            SiteAvatar(UrlUtils.hostOf(row.url)?.removePrefix("www.") ?: row.title)
+                            SiteAvatar(UrlUtils.hostOf(row.url)?.let(UrlUtils::registrableDomain) ?: row.title)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
                                 Text(
@@ -125,7 +123,7 @@ internal fun BookmarksScreen(
                                 )
                             }
                             IconButton(onClick = { onEvent(BookmarksUiEvent.Remove(row.url)) }) {
-                                Icon(Icons.Filled.Close, stringResource(CoreUiR.string.action_delete))
+                                Icon(ThetaIcons.Close, stringResource(CoreUiR.string.action_delete))
                             }
                         }
                     }

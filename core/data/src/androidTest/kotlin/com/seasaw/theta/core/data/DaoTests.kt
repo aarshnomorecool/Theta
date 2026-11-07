@@ -10,6 +10,7 @@ import com.seasaw.theta.core.data.db.DownloadEntity
 import com.seasaw.theta.core.data.db.SitePermissionEntity
 import com.seasaw.theta.core.data.db.SpeedDialEntity
 import com.seasaw.theta.core.data.db.TabEntity
+import com.seasaw.theta.core.data.db.TabGroupEntity
 import com.seasaw.theta.core.data.db.ThetaDatabase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -39,14 +40,27 @@ class DaoTests {
     @Test
     fun tabsReplaceAllIsOrderedAndAtomic() = runTest {
         val dao = db.tabDao()
-        dao.replaceAll(listOf(tab("a", position = 1), tab("b", position = 0)))
+        dao.replaceAll(listOf(tab("a", position = 1), tab("b", position = 0)), emptyList())
         assertEquals(listOf("b", "a"), dao.getAll().map { it.id })
 
-        dao.replaceAll(listOf(tab("c", position = 0)))
+        dao.replaceAll(listOf(tab("c", position = 0)), emptyList())
         assertEquals(listOf("c"), dao.getAll().map { it.id })
 
         dao.delete("c")
         assertTrue(dao.getAll().isEmpty())
+    }
+
+    @Test
+    fun tabGroupsAreSavedWithTheirTabsAndReplacedTogether() = runTest {
+        val dao = db.tabDao()
+        val group = TabGroupEntity(id = "g", name = "Work", colorIndex = 3, createdAt = 1)
+        dao.replaceAll(listOf(tab("a", position = 0).copy(groupId = "g"), tab("b", position = 1)), listOf(group))
+
+        assertEquals(listOf(group), dao.getAllGroups())
+        assertEquals(listOf("g", null), dao.getAll().map { it.groupId })
+
+        dao.replaceAll(listOf(tab("b", position = 0)), emptyList())
+        assertTrue(dao.getAllGroups().isEmpty())
     }
 
     @Test

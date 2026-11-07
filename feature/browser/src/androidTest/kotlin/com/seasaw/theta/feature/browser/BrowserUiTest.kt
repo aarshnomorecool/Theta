@@ -4,12 +4,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.seasaw.theta.core.ui.ThetaTheme
 import org.junit.Assert.assertEquals
@@ -47,48 +49,42 @@ class BrowserUiTest {
 
     @Test
     fun tabSwitcherSelectsAndClosesTabs() {
-        val selected = mutableListOf<String>()
-        val closed = mutableListOf<String>()
+        val events = mutableListOf<BrowserUiEvent>()
         compose.setContent {
             ThetaTheme {
                 TabSwitcher(
-                    tabs = listOf(
-                        BrowserTab("a", "https://a.example", "Alpha"),
-                        BrowserTab("b", "https://b.example", "Beta"),
+                    state = BrowserUiState(
+                        tabs = listOf(
+                            BrowserTab("a", "https://a.example", "Alpha"),
+                            BrowserTab("b", "https://b.example", "Beta"),
+                        ),
+                        selectedTabId = "a",
                     ),
-                    selectedTabId = "a",
-                    onSelect = { selected += it },
-                    onClose = { closed += it },
-                    onNewTab = {},
-                    onCloseIncognito = {},
-                    onDismiss = {},
-                    adSlot = {},
+                    onEvent = { events += it },
+                    navigation = SwitcherNavigation(),
                 )
             }
         }
         compose.onNodeWithText("Beta").assertIsDisplayed()
         compose.onNodeWithTag(TabSwitcherTestTags.CARD_PREFIX + "b").performClick()
         compose.onNodeWithTag(TabSwitcherTestTags.CLOSE_PREFIX + "a").performClick()
-        assertEquals(listOf("b"), selected)
-        assertEquals(listOf("a"), closed)
+        assertEquals(listOf(BrowserUiEvent.SelectTab("b"), BrowserUiEvent.CloseTab("a")), events)
     }
 
     @Test
-    fun tabSwitcherKeepsIncognitoTabsInTheirOwnSection() {
+    fun tabSwitcherKeepsPrivateTabsInTheirOwnSection() {
         compose.setContent {
             ThetaTheme {
                 TabSwitcher(
-                    tabs = listOf(
-                        BrowserTab("a", "https://a.example", "Regular page"),
-                        BrowserTab("p", "https://p.example", "Private page", isIncognito = true),
+                    state = BrowserUiState(
+                        tabs = listOf(
+                            BrowserTab("a", "https://a.example", "Regular page"),
+                            BrowserTab("p", "https://p.example", "Private page", isIncognito = true),
+                        ),
+                        selectedTabId = "a",
                     ),
-                    selectedTabId = "a",
-                    onSelect = {},
-                    onClose = {},
-                    onNewTab = {},
-                    onCloseIncognito = {},
-                    onDismiss = {},
-                    adSlot = {},
+                    onEvent = {},
+                    navigation = SwitcherNavigation(),
                 )
             }
         }
@@ -97,6 +93,86 @@ class BrowserUiTest {
         compose.onNodeWithTag(TabSwitcherTestTags.INCOGNITO_SECTION).performClick()
         compose.onNodeWithText("Private page").assertIsDisplayed()
         compose.onNodeWithText("Regular page").assertDoesNotExist()
+    }
+
+    @Test
+    fun groupedTabsShowAsOneCardThatOpensTheGroup() {
+        compose.setContent {
+            ThetaTheme {
+                TabSwitcher(
+                    state = BrowserUiState(
+                        tabs = listOf(
+                            BrowserTab("a", "https://a.example", "Alpha", groupId = "g"),
+                            BrowserTab("b", "https://b.example", "Beta", groupId = "g"),
+                            BrowserTab("c", "https://c.example", "Gamma"),
+                        ),
+                        groups = listOf(TabGroup("g", "Cricket", 1)),
+                        selectedTabId = "c",
+                    ),
+                    onEvent = {},
+                    navigation = SwitcherNavigation(),
+                )
+            }
+        }
+        compose.onNodeWithText("Alpha").assertDoesNotExist()
+        compose.onNodeWithTag(TabSwitcherTestTags.GROUP_PREFIX + "g").performClick()
+        compose.onNodeWithText("Alpha").assertIsDisplayed()
+        compose.onNodeWithText("Beta").assertIsDisplayed()
+        compose.onNodeWithText("Gamma").assertDoesNotExist()
+    }
+
+    @Test
+    fun selectedTabsCanBeGroupedFromTheSwitcher() {
+        val events = mutableListOf<BrowserUiEvent>()
+        compose.setContent {
+            ThetaTheme {
+                TabSwitcher(
+                    state = BrowserUiState(
+                        tabs = listOf(
+                            BrowserTab("a", "https://a.example", "Alpha"),
+                            BrowserTab("b", "https://b.example", "Beta"),
+                        ),
+                        selectedTabId = "a",
+                    ),
+                    onEvent = { events += it },
+                    navigation = SwitcherNavigation(),
+                )
+            }
+        }
+        compose.onNodeWithTag(TabSwitcherTestTags.CARD_PREFIX + "a").performTouchInput { longClick() }
+        compose.onNodeWithTag(TabSwitcherTestTags.CARD_PREFIX + "b").performClick()
+        compose.onNodeWithTag(TabSwitcherTestTags.SELECTION_GROUP).performClick()
+        compose.onNodeWithTag(TabGroupTestTags.NAME_FIELD).performTextInput("Work")
+        compose.onNodeWithTag(TabGroupTestTags.CONFIRM).performClick()
+        val created = events.filterIsInstance<BrowserUiEvent.CreateGroup>().single()
+        assertEquals(setOf("a", "b"), created.tabIds)
+        assertEquals("Work", created.name)
+    }
+
+    @Test
+    fun switcherMenuOffersEveryShortcut() {
+        compose.setContent {
+            ThetaTheme {
+                TabSwitcher(
+                    state = BrowserUiState(
+                        tabs = listOf(BrowserTab("a", "https://a.example", "Alpha")),
+                        selectedTabId = "a",
+                    ),
+                    onEvent = {},
+                    navigation = SwitcherNavigation(),
+                )
+            }
+        }
+        compose.onNodeWithTag(TabSwitcherTestTags.MENU).performClick()
+        listOf(
+            "New tab",
+            "New private tab",
+            "New tab group",
+            "Close all tabs",
+            "Select tabs",
+            "Delete browsing data",
+            "Settings",
+        ).forEach { compose.onNodeWithText(it).assertIsDisplayed() }
     }
 
     /** Regression test: the tap that focused the field cleared the selection, so typing added to the old address. */
@@ -129,7 +205,7 @@ class BrowserUiTest {
             }
         }
         compose.onNodeWithText("Find in page").assertIsDisplayed()
-        compose.onNodeWithText("New incognito tab").assertIsDisplayed()
+        compose.onNodeWithText("New private tab").assertIsDisplayed()
     }
 
     /** Project rule: an SSL error must have no way forward. */

@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -70,7 +67,7 @@ internal fun HistoryScreen(
                 value = state.query,
                 onValueChange = { onEvent(HistoryUiEvent.QueryChanged(it)) },
                 placeholder = { Text(stringResource(R.string.history_search)) },
-                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                leadingIcon = { Icon(ThetaIcons.Search, null) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -82,7 +79,7 @@ internal fun HistoryScreen(
                     onClick = { onEvent(HistoryUiEvent.SetGroupedBySite(!state.isGroupedBySite)) },
                     label = { Text(stringResource(R.string.history_group_by_site)) },
                     leadingIcon = if (state.isGroupedBySite) {
-                        { Icon(Icons.Filled.Check, null, Modifier.size(FilterChipDefaults.IconSize)) }
+                        { Icon(ThetaIcons.Check, null, Modifier.size(FilterChipDefaults.IconSize)) }
                     } else {
                         null
                     },

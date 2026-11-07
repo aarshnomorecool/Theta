@@ -7,4 +7,19 @@
     <string name="speed_dial_name">Name (optional)</string>
     <string name="speed_dial_remove_message">Remove this site from speed dial?</string>
     <string name="recent_sites_title">Recent sites</string>
+    <string name="top_sites_title">Top sites</string>
+    <string name="stats_title">Privacy stats</string>
+    <string name="stats_blocked">Ads and trackers blocked</string>
+    <string name="stats_data">Data saved</string>
+    <string name="stats_time">Time saved</string>
+    <string name="stats_estimated">Data and time saved are estimates.</string>
+    <string name="stats_since">Since %1$s</string>
+    <string name="stats_time_seconds">%1$d s</string>
+    <string name="stats_time_minutes">%1$d min</string>
+    <string name="stats_time_hours">%1$s h</string>
+    <string name="photo_credit">%1$s · %2$s</string>
+    <string name="photo_credit_description">Photo: %1$s by %2$s, %3$s. Opens the photo\'s page.</string>
+    <string name="pin_title">Add to speed dial?</string>
+    <string name="pin_message">%1$s will always show on your new tab page.</string>
+    <string name="stats_time_seconds_fraction">%1$s s</string>
 </resources>

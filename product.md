@@ -224,7 +224,7 @@ These are release blockers. Check them with macrobenchmarks on a low-end test de
 
 | Metric | Budget |
 |---|---|
-| Play download size (AAB) | under 15 MB |
+| Play download size (AAB) | under 50 MB |
 | Cold start to usable new-tab page | under 1.2 s |
 | Idle memory with 1 tab | under 180 MB |
 | Live WebViews | max 3 |

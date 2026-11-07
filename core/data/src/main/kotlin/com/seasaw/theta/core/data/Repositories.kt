@@ -15,6 +15,7 @@ import com.seasaw.theta.core.data.db.SpeedDialDao
 import com.seasaw.theta.core.data.db.SpeedDialEntity
 import com.seasaw.theta.core.data.db.TabDao
 import com.seasaw.theta.core.data.db.TabEntity
+import com.seasaw.theta.core.data.db.TabGroupEntity
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -26,16 +27,23 @@ fun interface Clock {
 
 @Singleton
 class TabsRepository @Inject constructor(private val dao: TabDao) {
-    suspend fun restore(): List<TabEntity> = dao.getAll()
+    data class Saved(val tabs: List<TabEntity>, val groups: List<TabGroupEntity>)
 
-    suspend fun save(tabs: List<TabEntity>) = dao.replaceAll(tabs)
+    suspend fun restore(): Saved = Saved(dao.getAll(), dao.getAllGroups())
 
-    suspend fun clear() = dao.deleteAll()
+    suspend fun save(tabs: List<TabEntity>, groups: List<TabGroupEntity> = emptyList()) = dao.replaceAll(tabs, groups)
+
+    suspend fun clear() {
+        dao.deleteAll()
+        dao.deleteAllGroups()
+    }
 }
 
 @Singleton
 class HistoryRepository @Inject constructor(private val dao: HistoryDao, private val clock: Clock) {
     fun observeRecent(limit: Int = DEFAULT_LIMIT): Flow<List<HistoryEntity>> = dao.observeRecent(limit)
+
+    fun observeMostVisited(limit: Int = DEFAULT_LIMIT): Flow<List<HistoryEntity>> = dao.observeMostVisited(limit)
 
     fun observeMatching(query: String, limit: Int = DEFAULT_LIMIT): Flow<List<HistoryEntity>> =
         dao.observeMatching("%${escapeLike(query)}%", limit)

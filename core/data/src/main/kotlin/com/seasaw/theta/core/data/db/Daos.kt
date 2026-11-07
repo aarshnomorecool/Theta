@@ -25,10 +25,21 @@ interface TabDao {
     @Query("DELETE FROM tabs")
     suspend fun deleteAll()
 
-    /** Replaces the whole set in one transaction, so a crash cannot leave a half-saved tab strip. */
+    @Query("SELECT * FROM tab_groups ORDER BY createdAt ASC")
+    suspend fun getAllGroups(): List<TabGroupEntity>
+
+    @Upsert
+    suspend fun upsertGroup(group: TabGroupEntity)
+
+    @Query("DELETE FROM tab_groups")
+    suspend fun deleteAllGroups()
+
+    /** Replaces tabs and groups in one transaction, so a crash cannot leave a half-saved tab strip. */
     @Transaction
-    suspend fun replaceAll(tabs: List<TabEntity>) {
+    suspend fun replaceAll(tabs: List<TabEntity>, groups: List<TabGroupEntity>) {
         deleteAll()
+        deleteAllGroups()
+        groups.forEach { upsertGroup(it) }
         tabs.forEach { upsert(it) }
     }
 }
@@ -39,6 +50,10 @@ data class HistoryIdAndUrl(val id: Long, val url: String)
 interface HistoryDao {
     @Query("SELECT * FROM history ORDER BY visitedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<HistoryEntity>>
+
+    /** The user's own most visited pages, for the new-tab page's top sites. */
+    @Query("SELECT * FROM history ORDER BY visitCount DESC, visitedAt DESC LIMIT :limit")
+    fun observeMostVisited(limit: Int): Flow<List<HistoryEntity>>
 
     @Query(
         "SELECT * FROM history WHERE url LIKE :pattern ESCAPE '\\' OR title LIKE :pattern ESCAPE '\\' " +

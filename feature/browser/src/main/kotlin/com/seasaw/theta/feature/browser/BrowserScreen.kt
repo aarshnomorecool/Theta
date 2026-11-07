@@ -13,16 +13,21 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -38,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -46,6 +53,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.seasaw.theta.core.ui.ThemePreviews
+import com.seasaw.theta.core.ui.ThetaIcons
 import com.seasaw.theta.core.ui.ThetaTheme
 import com.seasaw.theta.core.webview.PageError
 
@@ -117,7 +125,22 @@ internal fun BrowserScreen(
     val tab = state.selectedTab
     var isMenuOpen by remember { mutableStateOf(false) }
     var isTextSizeOpen by remember { mutableStateOf(false) }
+    var groupingTabId by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val window = remember(context) { context.findActivity()?.window }
+
+    /** Pictures the page for the tab switcher before it leaves the screen, then carries on. */
+    fun withPreview(then: () -> Unit) {
+        val current = state.selectedTab
+        if (!current.showsWebPage() || !state.isTabPreviewsEnabled) {
+            then()
+            return
+        }
+        PreviewCapture.capture(webViewFor(current!!.id), window) { preview ->
+            preview?.let { onEvent(BrowserUiEvent.PreviewCaptured(current.id, it)) }
+            then()
+        }
+    }
     val snackbars = remember { SnackbarHostState() }
     val messageText = state.message?.let { stringResource(it.textRes()) }
 
@@ -146,16 +169,19 @@ internal fun BrowserScreen(
     }
 
     if (state.isTabSwitcherOpen) {
-        // The WebView leaves the composition here, so no web content is on screen beside this screen's ad (ads rule 1).
-        Box(Modifier.systemBarsPadding()) {
+        Box(
+            Modifier
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .systemBarsPadding(),
+        ) {
             TabSwitcher(
-                tabs = state.tabs,
-                selectedTabId = state.selectedTabId,
-                onSelect = { onEvent(BrowserUiEvent.SelectTab(it)) },
-                onClose = { onEvent(BrowserUiEvent.CloseTab(it)) },
-                onNewTab = { onEvent(BrowserUiEvent.NewTab(it)) },
-                onCloseIncognito = { onEvent(BrowserUiEvent.CloseIncognitoTabs) },
-                onDismiss = { closeSwitcher(state, onEvent, onClosedSwitcherToNewTab) },
+                state = state,
+                onEvent = onEvent,
+                navigation = SwitcherNavigation(
+                    onDismiss = { closeSwitcher(state, onEvent, onClosedSwitcherToNewTab) },
+                    onSettings = navigation.onSettings,
+                    onClearBrowsingData = navigation.onClearBrowsingData,
+                ),
             )
         }
         return
@@ -202,6 +228,15 @@ internal fun BrowserScreen(
 
                     else -> WebViewHost(tab.id, state.webViewGeneration, webViewFor)
                 }
+                if (state.showZoomButtons && tab.showsWebPage()) {
+                    ZoomButtons(
+                        percent = state.textZoomPercent,
+                        onChange = { onEvent(BrowserUiEvent.SetTextZoom(it)) },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(12.dp),
+                    )
+                }
             }
             BrowserToolbar(
                 canGoBack = tab?.isNewTab == false,
@@ -209,8 +244,8 @@ internal fun BrowserScreen(
                 tabCount = state.tabs.count { it.isIncognito == (tab?.isIncognito == true) },
                 onBack = { onEvent(BrowserUiEvent.GoBack) },
                 onForward = { onEvent(BrowserUiEvent.GoForward) },
-                onNewTab = { onEvent(BrowserUiEvent.NewTab(tab?.isIncognito == true)) },
-                onShowTabs = { onEvent(BrowserUiEvent.ShowTabSwitcher(true)) },
+                onNewTab = { withPreview { onEvent(BrowserUiEvent.NewTab(tab?.isIncognito == true, tab?.groupId)) } },
+                onShowTabs = { withPreview { onEvent(BrowserUiEvent.ShowTabSwitcher(true)) } },
                 onMenu = { isMenuOpen = true },
             )
             Box(Modifier.align(Alignment.End)) {
@@ -222,6 +257,7 @@ internal fun BrowserScreen(
                     onShare = { tab?.let { context.shareUrl(it.url, it.title) } },
                     onTextSize = { isTextSizeOpen = true },
                     onDismiss = { isMenuOpen = false },
+                    onAddToGroup = { groupingTabId = tab?.id },
                 )
             }
         }
@@ -232,7 +268,36 @@ internal fun BrowserScreen(
         TextSizeDialog(state.textZoomPercent, { onEvent(BrowserUiEvent.SetTextZoom(it)) }, { isTextSizeOpen = false })
     }
     PromptHost(state.prompt, onEvent, onOpenExternal)
+    state.linkMenuUrl?.let { url -> LinkMenu(url, fromPrivateTab = tab?.isIncognito == true, onEvent = onEvent) }
+    groupingTabId?.let { id ->
+        GroupTabsFlow(setOf(id), isIncognito = tab?.isIncognito == true, state = state, onEvent = onEvent) {
+            groupingTabId = null
+        }
+    }
 }
+
+/** Accessibility: bigger and smaller page text without a pinch, for anyone who finds pinching hard. */
+@Composable
+private fun ZoomButtons(percent: Int, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ZoomButton("A+", stringResource(R.string.zoom_in)) { onChange(percent + ZOOM_STEP) }
+        ZoomButton("A\u2212", stringResource(R.string.zoom_out)) { onChange(percent - ZOOM_STEP) }
+    }
+}
+
+@Composable
+private fun ZoomButton(text: String, description: String, onClick: () -> Unit) {
+    SmallFloatingActionButton(
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.semantics { contentDescription = description },
+    ) { Text(text, style = MaterialTheme.typography.titleSmall) }
+}
+
+private const val ZOOM_STEP = 10
+
+/** A page from the web is on screen, rather than the new-tab page or an error. */
+private fun BrowserTab?.showsWebPage(): Boolean = this != null && !isNewTab && error == null
 
 private fun closeSwitcher(
     state: BrowserUiState,
@@ -269,25 +334,43 @@ private fun WebViewHost(tabId: String, generation: Int, webViewFor: (String) -> 
 
 @Composable
 private fun IncognitoNewTab(isIsolationSupported: Boolean) {
+    val colors = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxSize()
+            .background(colors.surfaceContainerLowest)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Box(
+            Modifier
+                .padding(top = 32.dp, bottom = 20.dp)
+                .size(80.dp)
+                .background(colors.surfaceContainerHigh, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(ThetaIcons.Private, null, tint = colors.onSurface, modifier = Modifier.size(40.dp))
+        }
         Text(stringResource(R.string.incognito_title), style = MaterialTheme.typography.headlineSmall)
         Text(
             stringResource(R.string.incognito_body),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 12.dp),
+            color = colors.onSurfaceVariant,
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .background(colors.surfaceContainerLow, MaterialTheme.shapes.large)
+                .padding(20.dp),
         )
         if (!isIsolationSupported) {
             Text(
                 stringResource(R.string.incognito_no_isolation),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 12.dp),
+                color = colors.onErrorContainer,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .background(colors.errorContainer, MaterialTheme.shapes.large)
+                    .padding(20.dp),
             )
         }
     }
@@ -343,6 +426,8 @@ private fun BrowserMessage.textRes(): Int = when (this) {
     BrowserMessage.DOWNLOAD_NEEDS_STORAGE -> R.string.message_download_storage
     BrowserMessage.NO_APP_FOUND -> R.string.message_no_app
     BrowserMessage.PAGE_RELOADED -> R.string.message_page_reloaded
+    BrowserMessage.OPENED_IN_BACKGROUND -> R.string.message_opened_background
+    BrowserMessage.LINK_COPIED -> R.string.message_link_copied
 }
 
 private fun Context.shareUrl(url: String, title: String) {

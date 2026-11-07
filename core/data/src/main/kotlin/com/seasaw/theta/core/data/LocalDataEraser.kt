@@ -35,13 +35,18 @@ data class EraseRequest(
 }
 
 /**
- * Removes app-side local data. Cookies, cache and web storage belong to the WebView and are cleared by core/webview, so
+ * Removes app-side local data. Privacy stats are deliberately not touched: they hold totals, not browsing, and survive
+ * even "delete everything" (they have their own reset in settings).
+ *
+ * Cookies, cache and web storage belong to the WebView and are cleared by core/webview, so
  * callers offering "clear everything" must invoke both. Files already in the Downloads folder are the user's and stay.
  */
 @Singleton
 class LocalDataEraser @Inject constructor(
     private val tabs: TabsRepository,
     private val tabState: TabStateStore,
+    private val tabPreviews: TabPreviewStore,
+    private val favicons: FaviconStore,
     private val history: HistoryRepository,
     private val bookmarks: BookmarksRepository,
     private val speedDial: SpeedDialRepository,
@@ -56,10 +61,14 @@ class LocalDataEraser @Inject constructor(
     val erasures: SharedFlow<EraseRequest> = _erasures.asSharedFlow()
 
     suspend fun erase(request: EraseRequest) {
-        if (request.history) history.clear()
+        if (request.history) {
+            history.clear()
+            favicons.clear()
+        }
         if (request.tabs) {
             tabs.clear()
             tabState.clear()
+            tabPreviews.clear()
         }
         if (request.bookmarks) bookmarks.clear()
         if (request.speedDial) speedDial.clear()

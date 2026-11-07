@@ -27,6 +27,7 @@ private object Routes {
     const val BOOKMARKS = "bookmarks"
     const val DOWNLOADS = "downloads"
     const val SETTINGS = "settings"
+    const val CLEAR_DATA = "settings/clear_data"
 }
 
 /** Features cannot depend on each other, so this is where they meet. */
@@ -45,6 +46,12 @@ internal fun ThetaNavHost(
     /** History and bookmarks hand a URL back to the browser and then get out of the way. */
     fun openInBrowser(url: String) {
         browserViewModel.onEvent(BrowserUiEvent.OpenUrl(url))
+        navController.popBackStack(Routes.BROWSER, inclusive = false)
+    }
+
+    /** Links from settings, such as licences and photo sources, open in a tab of their own. */
+    fun openInNewTab(url: String) {
+        browserViewModel.openFromIntent(url)
         navController.popBackStack(Routes.BROWSER, inclusive = false)
     }
 
@@ -78,6 +85,16 @@ internal fun ThetaNavHost(
                 onBack = { navController.popBackStack() },
                 versionName = BuildConfig.VERSION_NAME,
                 adPrivacy = AdPrivacyOptions(adsManager.isPrivacyOptionsRequired, adsManager::showPrivacyOptions),
+                onOpenLink = ::openInNewTab,
+            )
+        }
+        composable(Routes.CLEAR_DATA) {
+            SettingsRoute(
+                onBack = { navController.popBackStack() },
+                versionName = BuildConfig.VERSION_NAME,
+                adPrivacy = AdPrivacyOptions(adsManager.isPrivacyOptionsRequired, adsManager::showPrivacyOptions),
+                onOpenLink = ::openInNewTab,
+                startOnClearData = true,
             )
         }
     }
@@ -88,6 +105,7 @@ private fun NavHostController.toBrowserNavigation() = BrowserNavigation(
     onHistory = { navigate(Routes.HISTORY) },
     onDownloads = { navigate(Routes.DOWNLOADS) },
     onSettings = { navigate(Routes.SETTINGS) },
+    onClearBrowsingData = { navigate(Routes.CLEAR_DATA) },
 )
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

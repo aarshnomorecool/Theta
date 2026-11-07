@@ -7,4 +7,19 @@
     <string name="speed_dial_name">नाम (वैकल्पिक)</string>
     <string name="speed_dial_remove_message">इस साइट को स्पीड डायल से हटाएं?</string>
     <string name="recent_sites_title">हाल की साइटें</string>
+    <string name="top_sites_title">टॉप साइटें</string>
+    <string name="stats_title">प्राइवेसी आंकड़े</string>
+    <string name="stats_blocked">रोके गए विज्ञापन और ट्रैकर</string>
+    <string name="stats_data">बचा डेटा</string>
+    <string name="stats_time">बचा समय</string>
+    <string name="stats_estimated">बचा डेटा और समय अनुमान हैं।</string>
+    <string name="stats_since">%1$s से</string>
+    <string name="stats_time_seconds">%1$d से.</string>
+    <string name="stats_time_minutes">%1$d मिनट</string>
+    <string name="stats_time_hours">%1$s घंटे</string>
+    <string name="photo_credit">%1$s · %2$s</string>
+    <string name="photo_credit_description">फ़ोटो: %1$s, %2$s द्वारा, %3$s। फ़ोटो का पेज खुलेगा।</string>
+    <string name="pin_title">स्पीड डायल में जोड़ें?</string>
+    <string name="pin_message">%1$s आपके नए टैब पेज पर हमेशा दिखेगी।</string>
+    <string name="stats_time_seconds_fraction">%1$s से.</string>
 </resources>

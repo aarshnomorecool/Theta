@@ -10,11 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -209,6 +204,7 @@ data class BrowserNavigation(
     val onHistory: () -> Unit = {},
     val onDownloads: () -> Unit = {},
     val onSettings: () -> Unit = {},
+    val onClearBrowsingData: () -> Unit = {},
 )
 
 @Composable
@@ -220,6 +216,7 @@ internal fun BrowserMenu(
     onShare: () -> Unit,
     onTextSize: () -> Unit,
     onDismiss: () -> Unit,
+    onAddToGroup: () -> Unit = {},
 ) {
     val tab = state.selectedTab
     val hasPage = tab != null && !tab.isNewTab
@@ -230,21 +227,32 @@ internal fun BrowserMenu(
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         MenuRow(
             R.string.menu_new_incognito,
-            ThetaIcons.Incognito,
+            ThetaIcons.NewPrivateTab,
             chosen {
                 onEvent(BrowserUiEvent.NewTab(isIncognito = true))
             },
         )
+        if (tab != null) {
+            if (tab.groupId == null) {
+                MenuRow(R.string.menu_add_to_group, ThetaIcons.NewGroup, chosen(onAddToGroup))
+            } else {
+                MenuRow(
+                    R.string.menu_remove_from_group,
+                    ThetaIcons.Ungroup,
+                    chosen { onEvent(BrowserUiEvent.RemoveFromGroup(setOf(tab.id))) },
+                )
+            }
+        }
         HorizontalDivider()
         if (hasPage) {
             MenuRow(
                 if (state.isBookmarked) R.string.menu_remove_bookmark else R.string.menu_add_bookmark,
-                if (state.isBookmarked) ThetaIcons.Bookmark else ThetaIcons.BookmarkBorder,
+                if (state.isBookmarked) ThetaIcons.Bookmarked else ThetaIcons.Bookmark,
                 chosen { onEvent(BrowserUiEvent.ToggleBookmark) },
             )
-            MenuRow(R.string.menu_add_speed_dial, Icons.Filled.Star, chosen { onEvent(BrowserUiEvent.AddToSpeedDial) })
-            MenuRow(R.string.menu_find, Icons.Filled.Search, chosen { onEvent(BrowserUiEvent.StartFind) })
-            MenuRow(R.string.menu_share, Icons.Filled.Share, chosen(onShare))
+            MenuRow(R.string.menu_add_speed_dial, ThetaIcons.Star, chosen { onEvent(BrowserUiEvent.AddToSpeedDial) })
+            MenuRow(R.string.menu_find, ThetaIcons.Find, chosen { onEvent(BrowserUiEvent.StartFind) })
+            MenuRow(R.string.menu_share, ThetaIcons.Share, chosen(onShare))
             MenuToggleRow(R.string.menu_desktop_site, ThetaIcons.Desktop, tab.isDesktopMode) {
                 onEvent(BrowserUiEvent.ToggleDesktopMode)
             }
@@ -262,7 +270,7 @@ internal fun BrowserMenu(
         MenuRow(R.string.menu_bookmarks, ThetaIcons.Bookmark, chosen(navigation.onBookmarks))
         MenuRow(R.string.menu_history, ThetaIcons.History, chosen(navigation.onHistory))
         MenuRow(R.string.menu_downloads, ThetaIcons.Download, chosen(navigation.onDownloads))
-        MenuRow(R.string.menu_settings, Icons.Filled.Settings, chosen(navigation.onSettings))
+        MenuRow(R.string.menu_settings, ThetaIcons.Settings, chosen(navigation.onSettings))
     }
 }
 

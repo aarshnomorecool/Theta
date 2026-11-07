@@ -5,6 +5,11 @@ plugins {
 
 android {
     namespace = "com.seasaw.theta.core.data"
+
+    // Migration tests read the exported schemas, so they ship inside the test APK.
+    sourceSets {
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
+    }
 }
 
 ksp {
@@ -27,4 +32,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.turbine)
+    androidTestImplementation(libs.androidx.room.testing)
 }

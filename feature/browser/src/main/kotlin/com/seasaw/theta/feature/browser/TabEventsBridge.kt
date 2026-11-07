@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.os.Message
 import android.view.View
 import android.webkit.WebChromeClient
+import com.seasaw.theta.core.common.url.UrlUtils
 import com.seasaw.theta.core.webview.DownloadOffer
 import com.seasaw.theta.core.webview.ExternalLink
 import com.seasaw.theta.core.webview.FileChooserRequest
@@ -11,7 +12,8 @@ import com.seasaw.theta.core.webview.PageError
 import com.seasaw.theta.core.webview.PermissionPrompt
 import com.seasaw.theta.core.webview.TabEvents
 
-/** Turns what one tab's WebView reports into state changes. */
+/** Turns what one tab's WebView reports into state changes. One function per [TabEvents] callback. */
+@Suppress("TooManyFunctions")
 internal class TabEventsBridge(private val viewModel: BrowserViewModel, private val tabId: String) : TabEvents {
     private fun isPromptFree() = viewModel.state.value.prompt == null
 
@@ -29,10 +31,19 @@ internal class TabEventsBridge(private val viewModel: BrowserViewModel, private 
         viewModel.tab(tabId)?.let { viewModel.recordTitle(it, it.url, title) }
     }
 
-    override fun onFavicon(icon: Bitmap) = Unit
+    override fun onFavicon(icon: Bitmap) = viewModel.onFavicon(tabId, icon)
 
     override fun onNavigated(url: String, canGoBack: Boolean, canGoForward: Boolean) {
-        viewModel.updateTab(tabId) { it.copy(url = url, canGoBack = canGoBack, canGoForward = canGoForward) }
+        viewModel.updateTab(tabId) {
+            // A new site keeps no icon from the old one; a saved icon for the new site shows until the page sends one.
+            val sameSite = UrlUtils.hostOf(it.url) == UrlUtils.hostOf(url)
+            it.copy(
+                url = url,
+                canGoBack = canGoBack,
+                canGoForward = canGoForward,
+                favicon = if (sameSite) it.favicon else viewModel.cachedFavicon(url),
+            )
+        }
         viewModel.tab(tabId)?.let { viewModel.recordVisit(it, url) }
     }
 
@@ -77,4 +88,6 @@ internal class TabEventsBridge(private val viewModel: BrowserViewModel, private 
     }
 
     override fun onRendererGone() = viewModel.onRendererGone(tabId)
+
+    override fun onLinkLongPressed(url: String) = viewModel.onLinkLongPressed(tabId, url)
 }

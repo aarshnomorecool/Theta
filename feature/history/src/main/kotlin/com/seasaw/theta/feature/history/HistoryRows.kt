@@ -7,11 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.seasaw.theta.core.common.url.UrlUtils
 import com.seasaw.theta.core.ui.R as CoreUiR
 import com.seasaw.theta.core.ui.SiteAvatar
+import com.seasaw.theta.core.ui.ThetaIcons
 
 internal object HistoryTestTags {
     const val GROUP_TOGGLE = "history_group_toggle"
@@ -72,7 +68,7 @@ internal fun VisitRow(row: HistoryRow, onOpen: () -> Unit, onDelete: () -> Unit,
             )
         }
         IconButton(onClick = onDelete) {
-            Icon(Icons.Filled.Close, stringResource(CoreUiR.string.action_delete))
+            Icon(ThetaIcons.Close, stringResource(CoreUiR.string.action_delete))
         }
     }
 }
@@ -113,12 +109,12 @@ internal fun SiteRow(group: HistoryGroup, isExpanded: Boolean, onToggle: () -> U
             )
         }
         Icon(
-            if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            if (isExpanded) ThetaIcons.ChevronUp else ThetaIcons.ChevronDown,
             contentDescription = expandLabel,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         IconButton(onClick = onDeleteSite, Modifier.testTag(HistoryTestTags.DELETE_SITE_PREFIX + group.site)) {
-            Icon(Icons.Filled.Delete, stringResource(R.string.history_delete_site))
+            Icon(ThetaIcons.Trash, stringResource(R.string.history_delete_site))
         }
     }
 }

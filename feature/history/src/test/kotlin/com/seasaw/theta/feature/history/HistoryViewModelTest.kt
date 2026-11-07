@@ -39,6 +39,7 @@ class HistoryViewModelTest {
         )
 
         override fun observeRecent(limit: Int): Flow<List<HistoryEntity>> = rows
+        override fun observeMostVisited(limit: Int): Flow<List<HistoryEntity>> = rows
         override fun observeMatching(pattern: String, limit: Int): Flow<List<HistoryEntity>> {
             val needle = pattern.trim('%')
             return rows.map { list -> list.filter { it.title.contains(needle, ignoreCase = true) } }

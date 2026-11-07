@@ -4,7 +4,11 @@ Source of truth for the Play Console Data safety form. Update this whenever data
 
 ## Never leaves the device
 
-History, bookmarks, tabs, speed dial, cookies, site data, downloads, site permission decisions and ad block exemptions.
+History, bookmarks, tabs, tab groups, tab preview pictures, saved site icons, speed dial, cookies, site data, downloads,
+site permission decisions, ad block exemptions and the privacy stats counter. Private tabs' previews and icons are kept
+in memory only. The privacy stats counter holds totals only (blocked request count and the date counting began), never
+which sites or requests; it survives "Delete all my data" by design and has its own reset in settings.
+New-tab background photos ship inside the app, so showing them makes no network request.
 Android cloud backup and device-to-device transfer are disabled for the whole app (`allowBackup=false`,
 `data_extraction_rules.xml`), because they would otherwise copy this data off the device.
 

@@ -82,6 +82,8 @@ data class TabPreferences(
     val textZoomPercent: Int = 100,
     val desktopMode: Boolean = false,
     val liteMode: Boolean = false,
+    /** Sound and video may start without a tap. Off unless the user turns it on in settings. */
+    val allowAutoplay: Boolean = false,
 )
 
 internal object UserAgents {
@@ -101,6 +103,7 @@ internal fun WebSettings.applyPreferences(preferences: TabPreferences, mobileUse
     if (userAgentString != wantedUserAgent) userAgentString = wantedUserAgent
     loadsImagesAutomatically = !preferences.liteMode
     blockNetworkImage = preferences.liteMode
+    mediaPlaybackRequiresUserGesture = !preferences.allowAutoplay
     if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
         WebSettingsCompat.setAlgorithmicDarkeningAllowed(this, preferences.darkMode)
     }

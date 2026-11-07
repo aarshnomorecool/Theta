@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
             val barStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { isDark }
             enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
         }
-        ThetaTheme(darkTheme = isDark) {
+        ThetaTheme(darkTheme = isDark, highContrast = loaded?.highContrast == true) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 when {
                     loaded == null -> Unit

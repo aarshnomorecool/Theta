@@ -1,6 +1,7 @@
 package com.seasaw.theta.core.data.db
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -20,9 +21,12 @@ import javax.inject.Singleton
         DownloadEntity::class,
         SitePermissionEntity::class,
         AdBlockExemptionEntity::class,
+        TabGroupEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    // Version 2 adds tab groups. Automatic, because it only adds a table and a nullable column: nothing is rewritten.
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class ThetaDatabase : RoomDatabase() {
     abstract fun tabDao(): TabDao

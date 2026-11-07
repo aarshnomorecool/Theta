@@ -6,11 +6,14 @@ import com.seasaw.theta.core.data.AdBlockExemptionsRepository
 import com.seasaw.theta.core.data.BookmarksRepository
 import com.seasaw.theta.core.data.DownloadsRepository
 import com.seasaw.theta.core.data.EraseRequest
+import com.seasaw.theta.core.data.FaviconStore
 import com.seasaw.theta.core.data.HistoryRepository
 import com.seasaw.theta.core.data.LocalDataEraser
 import com.seasaw.theta.core.data.SpeedDialRepository
+import com.seasaw.theta.core.data.TabPreviewStore
 import com.seasaw.theta.core.data.TabsRepository
 import com.seasaw.theta.core.data.db.TabEntity
+import com.seasaw.theta.core.data.db.TabGroupEntity
 import com.seasaw.theta.core.data.settings.SettingsRepository
 import com.seasaw.theta.core.data.settings.UserSettings
 import com.seasaw.theta.core.webview.DownloadEnqueuer
@@ -56,6 +59,7 @@ class BrowserViewModelTest {
     private val webData = mockk<WebDataCleaner>(relaxed = true)
     private val erasures = MutableSharedFlow<EraseRequest>()
     private var savedTabs: List<TabEntity> = emptyList()
+    private var savedGroups: List<TabGroupEntity> = emptyList()
 
     @Before
     fun setUp() {
@@ -64,9 +68,13 @@ class BrowserViewModelTest {
         every { eraser.erasures } returns erasures
         every { exemptions.observeHosts() } returns flowOf(emptyList())
         every { bookmarks.observeIsBookmarked(any()) } returns flowOf(false)
-        coEvery { tabs.restore() } returns emptyList()
+        coEvery { tabs.restore() } returns TabsRepository.Saved(emptyList(), emptyList())
         val saved = slot<List<TabEntity>>()
-        coEvery { tabs.save(capture(saved)) } answers { savedTabs = saved.captured }
+        val groups = slot<List<TabGroupEntity>>()
+        coEvery { tabs.save(capture(saved), capture(groups)) } answers {
+            savedTabs = saved.captured
+            savedGroups = groups.captured
+        }
         coEvery { pool.acquire(any(), any(), any()) } returns mockk<WebView>(relaxed = true)
     }
 
@@ -89,11 +97,19 @@ class BrowserViewModelTest {
         downloadEnqueuer = mockk<DownloadEnqueuer>(relaxed = true),
         externalLinks = mockk<ExternalLinks>(relaxed = true),
         analytics = mockk<Analytics>(relaxed = true),
+        previewStore = previews,
+        faviconStore = favicons,
         appScope = CoroutineScope(dispatcher),
         mainDispatcher = dispatcher,
     )
 
+    private val previews = mockk<TabPreviewStore>(relaxed = true)
+    private val favicons = mockk<FaviconStore>(relaxed = true)
+
     private fun BrowserViewModel.selectedId() = checkNotNull(state.value.selectedTabId)
+
+    private fun BrowserViewModel.visit(url: String) =
+        TabEventsBridge(this, selectedId()).onNavigated(url, canGoBack = false, canGoForward = false)
 
     @Test
     fun `first launch opens one new tab page and no webview`() {
@@ -136,9 +152,12 @@ class BrowserViewModelTest {
 
     @Test
     fun `saved tabs come back with their selection`() {
-        coEvery { tabs.restore() } returns listOf(
-            TabEntity("a", "https://a.example/", "A", 0, false, 0),
-            TabEntity("b", "https://b.example/", "B", 1, true, 0),
+        coEvery { tabs.restore() } returns TabsRepository.Saved(
+            listOf(
+                TabEntity("a", "https://a.example/", "A", 0, false, 0),
+                TabEntity("b", "https://b.example/", "B", 1, true, 0),
+            ),
+            emptyList(),
         )
         val vm = viewModel()
         assertEquals(listOf("a", "b"), vm.state.value.tabs.map { it.id })
@@ -176,7 +195,7 @@ class BrowserViewModelTest {
         val vm = viewModel()
         vm.onEvent(BrowserUiEvent.NewTab(isIncognito = true))
         val incognitoId = vm.selectedId()
-        vm.onEvent(BrowserUiEvent.CloseIncognitoTabs)
+        vm.onEvent(BrowserUiEvent.CloseAllTabs(isIncognito = true))
         coVerify { pool.close(incognitoId) }
         assertTrue(vm.state.value.tabs.none { it.isIncognito })
     }
@@ -242,5 +261,123 @@ class BrowserViewModelTest {
         assertEquals(true, granted)
         assertEquals(true, remembered)
         assertNull(vm.state.value.prompt)
+    }
+
+    @Test
+    fun `groups are saved with their regular tabs and come back after a restart`() {
+        val vm = viewModel()
+        vm.visit("https://a.example/")
+        val first = vm.selectedId()
+        vm.onEvent(BrowserUiEvent.CreateGroup(setOf(first), "Cricket", 2, isIncognito = false))
+        vm.onEvent(BrowserUiEvent.AppBackgrounded)
+
+        assertEquals(listOf("Cricket"), savedGroups.map { it.name })
+        val groupId = savedGroups.single().id
+        assertEquals(listOf(groupId), savedTabs.map { it.groupId })
+
+        coEvery { tabs.restore() } returns TabsRepository.Saved(savedTabs, savedGroups)
+        val restored = viewModel()
+        assertEquals(listOf(TabGroup(groupId, "Cricket", 2)), restored.state.value.groups)
+        assertEquals(groupId, restored.state.value.tabs.single().groupId)
+    }
+
+    @Test
+    fun `a saved tab pointing at a missing group comes back ungrouped`() {
+        coEvery { tabs.restore() } returns TabsRepository.Saved(
+            listOf(TabEntity("a", "https://a.example/", "A", 0, true, 0, groupId = "gone")),
+            emptyList(),
+        )
+        val vm = viewModel()
+        assertNull(vm.state.value.tabs.single().groupId)
+        assertTrue(vm.state.value.groups.isEmpty())
+    }
+
+    @Test
+    fun `private groups are never written to disk`() {
+        val vm = viewModel()
+        vm.onEvent(BrowserUiEvent.NewTab(isIncognito = true))
+        vm.visit("https://private.example/")
+        vm.onEvent(BrowserUiEvent.CreateGroup(setOf(vm.selectedId()), "Secret", 0, isIncognito = true))
+        vm.onEvent(BrowserUiEvent.AppBackgrounded)
+        assertEquals(1, vm.state.value.groups.size)
+        assertTrue(savedGroups.isEmpty())
+    }
+
+    @Test
+    fun `a group disappears when its last tab closes`() {
+        val vm = viewModel()
+        vm.visit("https://a.example/")
+        vm.onEvent(BrowserUiEvent.CreateGroup(setOf(vm.selectedId()), "Solo", 0, isIncognito = false))
+        vm.onEvent(BrowserUiEvent.CloseTab(vm.selectedId()))
+        assertTrue(vm.state.value.groups.isEmpty())
+    }
+
+    @Test
+    fun `closing a group closes exactly its tabs`() {
+        val vm = viewModel()
+        vm.visit("https://a.example/")
+        val keep = vm.selectedId()
+        vm.onEvent(BrowserUiEvent.CreateGroup(emptySet(), "Work", 1, isIncognito = false))
+        val group = vm.state.value.groups.single()
+        vm.onEvent(BrowserUiEvent.NewTab(isIncognito = false, groupId = group.id))
+        vm.onEvent(BrowserUiEvent.CloseGroup(group.id))
+        assertEquals(listOf(keep), vm.state.value.tabs.map { it.id })
+    }
+
+    @Test
+    fun `opening a link in a group puts the page and the new tab in one group`() {
+        val vm = viewModel()
+        vm.visit("https://a.example/")
+        val source = vm.selectedId()
+        vm.onEvent(BrowserUiEvent.OpenLink("https://b.example/", LinkTarget.NEW_TAB_IN_GROUP))
+
+        val state = vm.state.value
+        assertEquals(source, state.selectedTabId)
+        assertEquals(2, state.tabs.size)
+        val groupId = state.tabs.first().groupId
+        assertNotNull(groupId)
+        assertTrue(state.tabs.all { it.groupId == groupId })
+        assertEquals("https://b.example/", state.tabs.last().url)
+        // Background tabs get no WebView until the user goes to them.
+        coVerify(exactly = 0) { pool.acquire(match { it.url == "https://b.example/" }, any(), any()) }
+    }
+
+    @Test
+    fun `private previews and icons stay in memory only`() {
+        val vm = viewModel()
+        vm.onEvent(BrowserUiEvent.NewTab(isIncognito = true))
+        vm.visit("https://private.example/")
+        val id = vm.selectedId()
+        val picture = mockk<android.graphics.Bitmap>(relaxed = true)
+        vm.onEvent(BrowserUiEvent.PreviewCaptured(id, picture))
+        TabEventsBridge(vm, id).onFavicon(picture)
+
+        assertEquals(picture, vm.state.value.previews[id])
+        assertEquals(picture, vm.state.value.selectedTab?.favicon)
+        coVerify(exactly = 0) { previews.save(any(), any()) }
+        coVerify(exactly = 0) { favicons.save(any(), any()) }
+    }
+
+    @Test
+    fun `regular previews and icons are kept for next time`() {
+        val vm = viewModel()
+        vm.visit("https://a.example/")
+        val id = vm.selectedId()
+        val picture = mockk<android.graphics.Bitmap>(relaxed = true)
+        vm.onEvent(BrowserUiEvent.PreviewCaptured(id, picture))
+        TabEventsBridge(vm, id).onFavicon(picture)
+        coVerify { previews.save(id, picture) }
+        coVerify { favicons.save("a.example", picture) }
+    }
+
+    @Test
+    fun `turning previews off drops the ones in memory`() {
+        val flow = kotlinx.coroutines.flow.MutableStateFlow(UserSettings())
+        every { settings.settings } returns flow
+        val vm = viewModel()
+        vm.visit("https://a.example/")
+        vm.onEvent(BrowserUiEvent.PreviewCaptured(vm.selectedId(), mockk(relaxed = true)))
+        flow.value = UserSettings(tabPreviews = false)
+        assertTrue(vm.state.value.previews.isEmpty())
     }
 }
