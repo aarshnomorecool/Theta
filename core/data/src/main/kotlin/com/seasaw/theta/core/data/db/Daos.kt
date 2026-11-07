@@ -33,6 +33,8 @@ interface TabDao {
     }
 }
 
+data class HistoryIdAndUrl(val id: Long, val url: String)
+
 @Dao
 interface HistoryDao {
     @Query("SELECT * FROM history ORDER BY visitedAt DESC LIMIT :limit")
@@ -65,6 +67,13 @@ interface HistoryDao {
 
     @Query("DELETE FROM history WHERE id = :id")
     suspend fun delete(id: Long)
+
+    /** Only ids and URLs, so finding one site's visits does not load every title into memory. */
+    @Query("SELECT id, url FROM history")
+    suspend fun allIdsAndUrls(): List<HistoryIdAndUrl>
+
+    @Query("DELETE FROM history WHERE id IN (:ids)")
+    suspend fun deleteIds(ids: List<Long>)
 
     @Query("DELETE FROM history WHERE visitedAt < :before")
     suspend fun deleteOlderThan(before: Long): Int

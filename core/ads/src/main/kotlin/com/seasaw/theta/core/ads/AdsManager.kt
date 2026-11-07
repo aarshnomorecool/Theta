@@ -1,15 +1,19 @@
 package com.seasaw.theta.core.ads
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.os.SystemClock
 import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
@@ -88,8 +92,34 @@ class AdsManager @Inject constructor(
         }
     }
 
-    /** Records that a slot on [placement] displayed an ad. */
-    fun reportShown(placement: AdPlacement) = analytics.track(AnalyticsEvent.AdShown(placement.analyticsId))
+    private val nativeAds = NativeAdCache<AdPlacement, NativeAd>(
+        refreshMillis = NATIVE_REFRESH_MILLIS,
+        retryMillis = NATIVE_RETRY_MILLIS,
+        destroy = NativeAd::destroy,
+    )
+
+    /** The ad a slot on [placement] should show. Call [requestNativeAd] when the slot appears. */
+    fun nativeAd(placement: AdPlacement): StateFlow<NativeSlotState<NativeAd>> = nativeAds.state(placement)
+
+    /** Asks for an ad only when [placement] has none, or its current one is old enough to replace. */
+    @SuppressLint("MissingPermission") // INTERNET is declared in the app manifest and merged by the Ads SDK.
+    fun requestNativeAd(placement: AdPlacement) {
+        if (_state.value != AdsState.READY || !nativeAds.shouldLoad(placement, SystemClock.elapsedRealtime())) return
+        AdLoader.Builder(context, BuildConfig.NATIVE_AD_UNIT)
+            .forNativeAd { ad ->
+                nativeAds.onLoaded(placement, ad, SystemClock.elapsedRealtime())
+                analytics.track(AnalyticsEvent.AdShown(placement.analyticsId))
+            }
+            .withAdListener(
+                object : AdListener() {
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        nativeAds.onFailed(placement, SystemClock.elapsedRealtime())
+                    }
+                },
+            )
+            .build()
+            .loadAd(AdRequest.Builder().build())
+    }
 
     /** Pre-loads so that showing later is instant and does not delay the transition the user just asked for. */
     private fun loadInterstitial() {
@@ -160,5 +190,9 @@ class AdsManager @Inject constructor(
 
     private companion object {
         const val MILLIS_PER_SECOND = 1_000L
+
+        /** AdMob advises against refreshing native ads more often than about once a minute. */
+        const val NATIVE_REFRESH_MILLIS = 60_000L
+        const val NATIVE_RETRY_MILLIS = 60_000L
     }
 }

@@ -46,6 +46,14 @@ class UrlUtilsTest {
     }
 
     @Test
+    fun `site groups subdomains together`() {
+        assertEquals("youtube.com", UrlUtils.siteOf("https://m.youtube.com/shorts/abc"))
+        assertEquals("youtube.com", UrlUtils.siteOf("https://www.youtube.com/watch?v=1"))
+        assertEquals("example.co.in", UrlUtils.siteOf("https://news.example.co.in/today"))
+        assertNull(UrlUtils.siteOf("about:blank"))
+    }
+
+    @Test
     fun `youtube hosts are recognised`() {
         assertTrue(UrlUtils.isYouTube("m.youtube.com"))
         assertTrue(UrlUtils.isYouTube("youtu.be"))

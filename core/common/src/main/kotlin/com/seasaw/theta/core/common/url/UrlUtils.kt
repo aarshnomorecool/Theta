@@ -53,6 +53,12 @@ object UrlUtils {
     /** Ads rule 6 needs this: no ad may share a screen with a YouTube page. */
     fun isYouTube(host: String?): Boolean = host != null && registrableDomain(host) in YOUTUBE_DOMAINS
 
+    /**
+     * The site a URL belongs to, used to group history: m.youtube.com and www.youtube.com are both youtube.com.
+     * Null for addresses without a host, such as about:blank.
+     */
+    fun siteOf(url: String): String? = hostOf(url)?.let(::registrableDomain)
+
     /** Short, readable form for the address bar and lists: no scheme, no www, no trailing slash. */
     fun displayUrl(url: String): String = url
         .removePrefix("https://")

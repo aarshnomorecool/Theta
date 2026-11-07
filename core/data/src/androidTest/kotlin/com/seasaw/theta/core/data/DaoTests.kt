@@ -93,6 +93,32 @@ class DaoTests {
     }
 
     @Test
+    fun historyIdsAndUrlsCanBeListedAndDeletedInBulk() = runTest {
+        val dao = db.historyDao()
+        dao.recordVisit("https://m.youtube.com/shorts/1", "one", 1)
+        dao.recordVisit("https://m.youtube.com/shorts/2", "two", 2)
+        dao.recordVisit("https://news.example/", "news", 3)
+
+        val youtube = dao.allIdsAndUrls().filter { "youtube" in it.url }.map { it.id }
+        assertEquals(2, youtube.size)
+        dao.deleteIds(youtube)
+        assertEquals(listOf("news"), dao.observeRecent(10).first().map { it.title })
+    }
+
+    /** Through the repository, so the site matching and batching are exercised against real SQLite. */
+    @Test
+    fun deletingASiteRemovesAllItsVisitsAndNothingElse() = runTest {
+        val dao = db.historyDao()
+        val repository = HistoryRepository(dao) { 0L }
+        dao.recordVisit("https://m.youtube.com/shorts/1", "one", 1)
+        dao.recordVisit("https://www.youtube.com/watch?v=2", "two", 2)
+        dao.recordVisit("https://evil.example/x.youtube.com/", "lookalike", 3)
+
+        assertEquals(2, repository.deleteSite("youtube.com"))
+        assertEquals(listOf("lookalike"), dao.observeRecent(10).first().map { it.title })
+    }
+
+    @Test
     fun bookmarkStateIsObservable() = runTest {
         val dao = db.bookmarkDao()
         val url = "https://a.example"

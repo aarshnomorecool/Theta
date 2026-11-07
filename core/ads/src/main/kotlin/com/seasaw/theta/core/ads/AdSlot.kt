@@ -1,6 +1,5 @@
 package com.seasaw.theta.core.ads
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
 import android.util.TypedValue
@@ -16,11 +15,9 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -30,10 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdLoader
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 import dagger.hilt.EntryPoint
@@ -56,9 +49,11 @@ private val SLOT_HEIGHT = 96.dp
  * The slot reserves its full height while an ad is on its way, so that loading never moves content (ads rule 5). It
  * only collapses when no ad is coming. Callers must not place it directly beside tappable controls.
  *
+ * The ad itself is owned by [AdsManager], not by this composable, so a slot that leaves and re-enters the screen shows
+ * the same ad instead of requesting a new one.
+ *
  * @param visibleHosts hosts of any page previews on the same screen, for the YouTube rule
  */
-@SuppressLint("MissingPermission") // INTERNET is declared in the app manifest and merged by the Ads SDK.
 @Composable
 fun AdSlot(placement: AdPlacement, modifier: Modifier = Modifier, visibleHosts: Collection<String?> = emptyList()) {
     if (LocalInspectionMode.current) {
@@ -72,41 +67,21 @@ fun AdSlot(placement: AdPlacement, modifier: Modifier = Modifier, visibleHosts: 
         EntryPointAccessors.fromApplication(context.applicationContext, AdSlotEntryPoint::class.java).adsManager()
     }
     val adsState by manager.state.collectAsStateWithLifecycle()
-    var ad by remember { mutableStateOf<NativeAd?>(null) }
-    var failed by remember { mutableStateOf(false) }
+    val slotFlow = remember(placement) { manager.nativeAd(placement) }
+    val slot by slotFlow.collectAsStateWithLifecycle()
+    val isAllowedHere = AdPolicy.mayShowOnScreen(visibleHosts)
 
-    DisposableEffect(adsState, placement) {
-        var loaded: NativeAd? = null
-        if (adsState == AdsState.READY && ad == null) {
-            AdLoader.Builder(context, BuildConfig.NATIVE_AD_UNIT)
-                .forNativeAd { nativeAd ->
-                    loaded = nativeAd
-                    ad = nativeAd
-                    manager.reportShown(placement)
-                }
-                .withAdListener(
-                    object : AdListener() {
-                        override fun onAdFailedToLoad(error: LoadAdError) {
-                            failed = true
-                        }
-                    },
-                )
-                .build()
-                .loadAd(AdRequest.Builder().build())
-        }
-        onDispose {
-            loaded?.destroy()
-            if (loaded != null) ad = null
-        }
+    LaunchedEffect(adsState, placement, isAllowedHere) {
+        if (adsState == AdsState.READY && isAllowedHere) manager.requestNativeAd(placement)
     }
 
-    val isHidden = adsState == AdsState.UNAVAILABLE || failed || !AdPolicy.mayShowOnScreen(visibleHosts)
+    val isHidden = adsState == AdsState.UNAVAILABLE || slot is NativeSlotState.Empty || !isAllowedHere
     if (isHidden) return
 
     val adLabel = stringResource(R.string.ad_label)
     val colors = MaterialTheme.colorScheme
     Box(modifier.fillMaxWidth().height(SLOT_HEIGHT)) {
-        ad?.let { current ->
+        (slot as? NativeSlotState.Showing)?.ad?.let { current ->
             AndroidView(
                 modifier = Modifier.fillMaxWidth(),
                 factory = { viewContext -> NativeAdViews.create(viewContext, adLabel, colors) },

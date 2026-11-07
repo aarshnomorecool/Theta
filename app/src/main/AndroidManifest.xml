@@ -74,6 +74,13 @@
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
+        <!--
+            The native ad validator is a developer overlay that the SDK adds to test ads. It already reported no issues
+            with our ad layout, and its bubbles get in the way of testing the app. Turn it back on if the layout changes.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED"
+            android:value="false" />
 
         <!-- Config changes are handled in place, so that rotating a phone never reloads the pages in live WebViews. -->
         <activity

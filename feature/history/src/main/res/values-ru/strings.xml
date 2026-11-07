@@ -7,4 +7,16 @@
     <string name="history_empty_message">Здесь появятся посещённые страницы. Они хранятся только на этом телефоне.</string>
     <string name="history_clear_title">Очистить всю историю?</string>
     <string name="history_clear_message">Это действие нельзя отменить.</string>
+    <string name="history_group_by_site">Группировать по сайтам</string>
+    <string name="history_show_visits">Показать посещения</string>
+    <string name="history_hide_visits">Скрыть посещения</string>
+    <string name="history_delete_site">Удалить сайт из истории</string>
+    <string name="history_delete_site_title">Удалить все посещения сайта %1$s?</string>
+    <string name="history_delete_site_message">Все посещения этого сайта будут удалены из истории.</string>
+    <plurals name="history_site_visits">
+        <item quantity="one">%1$d посещение</item>
+        <item quantity="few">%1$d посещения</item>
+        <item quantity="many">%1$d посещений</item>
+        <item quantity="other">%1$d посещения</item>
+    </plurals>
 </resources>

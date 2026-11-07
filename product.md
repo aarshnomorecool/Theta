@@ -60,7 +60,7 @@ Only build what belongs to the current phase. If a task drifts into a later phas
 | Lint / format | ktlint, detekt, Android Lint |
 | CI | GitHub Actions |
 
-- **SDK levels:** `minSdk = 26`, and `targetSdk` and `compileSdk` set to the level Google Play currently requires.
+- **SDK levels:** `minSdk = 26`. `compileSdk` is the newest stable platform (Android 17, API 37) so the app builds and is tested against current Android. `targetSdk` is the level Google Play currently requires; moving it to 37 needs the `ACCESS_LOCAL_NETWORK` permission approved first, because Android 17 blocks LAN pages for apps targeting it.
 - **Dependencies:** keep them in `gradle/libs.versions.toml`. Never hardcode versions in module build files.
 
 ## Module layout

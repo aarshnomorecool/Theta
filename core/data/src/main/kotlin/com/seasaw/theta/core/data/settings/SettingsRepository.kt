@@ -55,6 +55,10 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
     suspend fun setDiagnosticsConsent(enabled: Boolean) {
         store.edit { it[Keys.DIAGNOSTICS_CONSENT] = enabled }
     }
+    suspend fun setHistoryGroupedBySite(grouped: Boolean) {
+        store.edit { it[Keys.HISTORY_GROUPED] = grouped }
+    }
+
     suspend fun markFirstSessionCompleted() {
         store.edit { it[Keys.FIRST_SESSION_COMPLETED] = true }
     }
@@ -101,6 +105,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
             privacyNoticeAccepted = preferences[Keys.PRIVACY_NOTICE_ACCEPTED] ?: defaults.privacyNoticeAccepted,
             diagnosticsConsent = preferences[Keys.DIAGNOSTICS_CONSENT] ?: defaults.diagnosticsConsent,
             firstSessionCompleted = preferences[Keys.FIRST_SESSION_COMPLETED] ?: defaults.firstSessionCompleted,
+            historyGroupedBySite = preferences[Keys.HISTORY_GROUPED] ?: defaults.historyGroupedBySite,
         )
     }
 
@@ -115,6 +120,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         val PRIVACY_NOTICE_ACCEPTED = booleanPreferencesKey("privacy_notice_accepted")
         val DIAGNOSTICS_CONSENT = booleanPreferencesKey("diagnostics_consent")
         val FIRST_SESSION_COMPLETED = booleanPreferencesKey("first_session_completed")
+        val HISTORY_GROUPED = booleanPreferencesKey("history_grouped_by_site")
     }
 }
 

@@ -245,7 +245,7 @@ internal fun BrowserMenu(
             MenuRow(R.string.menu_add_speed_dial, Icons.Filled.Star, chosen { onEvent(BrowserUiEvent.AddToSpeedDial) })
             MenuRow(R.string.menu_find, Icons.Filled.Search, chosen { onEvent(BrowserUiEvent.StartFind) })
             MenuRow(R.string.menu_share, Icons.Filled.Share, chosen(onShare))
-            MenuToggleRow(R.string.menu_desktop_site, ThetaIcons.Desktop, tab?.isDesktopMode == true) {
+            MenuToggleRow(R.string.menu_desktop_site, ThetaIcons.Desktop, tab.isDesktopMode) {
                 onEvent(BrowserUiEvent.ToggleDesktopMode)
             }
             if (state.isAdBlockEnabled) {

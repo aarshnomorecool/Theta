@@ -43,6 +43,9 @@ data class UserSettings(
 
     /** Ads rule 4: no interstitial on launch in the first session. */
     val firstSessionCompleted: Boolean = false,
+
+    /** History shows one row per site, which keeps runs of short videos or articles from burying everything else. */
+    val historyGroupedBySite: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_TEXT_ZOOM = 100

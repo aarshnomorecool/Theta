@@ -7,4 +7,14 @@
     <string name="history_empty_message">तुम्ही पाहिलेली पेज येथे दिसतील. ती याच फोनवर राहतात.</string>
     <string name="history_clear_title">सर्व इतिहास साफ करायचा?</string>
     <string name="history_clear_message">हे पूर्ववत करता येणार नाही.</string>
+    <string name="history_group_by_site">साइटनुसार गट करा</string>
+    <string name="history_show_visits">भेटी दाखवा</string>
+    <string name="history_hide_visits">भेटी लपवा</string>
+    <string name="history_delete_site">साइट इतिहासातून हटवा</string>
+    <string name="history_delete_site_title">%1$s च्या सर्व भेटी हटवायच्या?</string>
+    <string name="history_delete_site_message">यामुळे तुमच्या इतिहासातून या साइटची प्रत्येक भेट काढली जाईल.</string>
+    <plurals name="history_site_visits">
+        <item quantity="one">%1$d भेट</item>
+        <item quantity="other">%1$d भेटी</item>
+    </plurals>
 </resources>

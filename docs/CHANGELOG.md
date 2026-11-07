@@ -20,6 +20,18 @@
 - `feature/newtab`, `feature/history`, `feature/bookmarks`, `feature/downloads`, `feature/settings`, first-launch consent.
 - English, Hindi, Marathi and Russian strings. The translations were machine written and need a native speaker's review.
 
+### Changed
+
+- Builds against Android 17 (compileSdk 37), with core-ktx, Compose, lifecycle, navigation, Hilt and OkHttp on their
+  latest releases. targetSdk stays at 36 until the ACCESS_LOCAL_NETWORK permission is approved.
+- History groups visits by site, with a visit count, expandable rows and one-tap removal of a whole site. The choice
+  is remembered.
+
+### Fixed
+
+- Native ad slots requested a new ad every time their screen reappeared, which stacked up AdMob validator bubbles
+  and wasted data. Ads are now kept per placement and refreshed at most once a minute. The validator overlay is off.
+
 ### Fixed during development (each has a regression test)
 
 - A new incognito session could see the previous session's cookies, because WebView cannot delete a loaded profile.

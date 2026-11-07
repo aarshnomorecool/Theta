@@ -7,4 +7,14 @@
     <string name="history_empty_message">Pages you visit appear here. They stay on this phone.</string>
     <string name="history_clear_title">Clear all history?</string>
     <string name="history_clear_message">This cannot be undone.</string>
+    <string name="history_group_by_site">Group by site</string>
+    <string name="history_show_visits">Show visits</string>
+    <string name="history_hide_visits">Hide visits</string>
+    <string name="history_delete_site">Delete site from history</string>
+    <string name="history_delete_site_title">Delete all visits to %1$s?</string>
+    <string name="history_delete_site_message">This removes every visit to this site from your history.</string>
+    <plurals name="history_site_visits">
+        <item quantity="one">%1$d visit</item>
+        <item quantity="other">%1$d visits</item>
+    </plurals>
 </resources>

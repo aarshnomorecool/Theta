@@ -1,8 +1,12 @@
 [versions]
-# SDK levels. Play has required targetSdk 36 for new apps and updates since 2026-08-31.
+# SDK levels.
+# compileSdk is Android 17 (API 37), so the app is built against the newest platform and its libraries can stay current.
+# targetSdk stays at 36, the level Play requires (since 2026-08-31). Targeting 37 opts into Android 17's local network
+# protection, which blocks pages on the LAN (router admin pages, for example) unless the app holds ACCESS_LOCAL_NETWORK.
+# Adding that permission needs product approval first. The app runs on Android 17 and later either way.
 minSdk = "26"
 targetSdk = "36"
-compileSdk = "36"
+compileSdk = "37"
 compileSdkMinor = "1"
 buildTools = "36.1.0"
 java = "17"
@@ -19,21 +23,18 @@ googleServices = "4.5.0"
 crashlyticsPlugin = "3.0.8"
 baselineProfile = "1.5.0"
 
-# Libraries.
-# compileSdk stays at the level Play requires (36), as product.md asks. These are therefore the newest releases that do
-# not demand compileSdk 37: coreKtx, composeBom, hiltAndroidx, lifecycle, navigationCompose and okhttp.
-# Moving to compileSdk 37 only needs the android-37 platform installed, and would allow all of them to be raised.
+# Libraries
 activityCompose = "1.13.0"
-composeBom = "2026.06.01"
-coreKtx = "1.18.0"
+composeBom = "2026.09.00"
+coreKtx = "1.19.1"
 coroutines = "1.11.0"
 datastore = "1.3.0"
 firebaseBom = "35.1.0"
-hiltAndroidx = "1.3.0"
+hiltAndroidx = "1.4.0"
 kotlinxSerialization = "1.12.0"
-lifecycle = "2.10.0"
-navigationCompose = "2.9.8"
-okhttp = "5.4.0"
+lifecycle = "2.11.0"
+navigationCompose = "2.10.2"
+okhttp = "5.5.1"
 playAds = "25.5.0"
 playAppUpdate = "2.1.0"
 playReview = "2.0.2"

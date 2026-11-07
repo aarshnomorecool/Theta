@@ -1,5 +1,6 @@
 package com.seasaw.theta.core.data
 
+import com.seasaw.theta.core.common.url.UrlUtils
 import com.seasaw.theta.core.data.db.AdBlockExemptionDao
 import com.seasaw.theta.core.data.db.AdBlockExemptionEntity
 import com.seasaw.theta.core.data.db.BookmarkDao
@@ -50,8 +51,20 @@ class HistoryRepository @Inject constructor(private val dao: HistoryDao, private
 
     suspend fun clear() = dao.deleteAll()
 
+    /**
+     * Removes every visit to [site], including ones older than the list on screen shows. Matching is done on the parsed
+     * site rather than with SQL LIKE, which would also catch other sites whose URLs merely contain this one's name.
+     */
+    suspend fun deleteSite(site: String): Int {
+        val ids = dao.allIdsAndUrls().filter { UrlUtils.siteOf(it.url) == site }.map { it.id }
+        // SQLite caps the number of bound parameters in one statement, so large deletions go in batches.
+        ids.chunked(DELETE_BATCH_SIZE).forEach { dao.deleteIds(it) }
+        return ids.size
+    }
+
     companion object {
         const val DEFAULT_LIMIT = 500
+        private const val DELETE_BATCH_SIZE = 500
 
         /** Stops a user's literal % or _ from acting as a wildcard. Pairs with the DAO's ESCAPE clause. */
         internal fun escapeLike(query: String): String =
