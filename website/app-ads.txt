@@ -1,0 +1,3 @@
+# Replace the line below with the exact line AdMob shows for your account
+# (AdMob > Apps > View all apps > app-ads.txt), then delete these comments.
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
