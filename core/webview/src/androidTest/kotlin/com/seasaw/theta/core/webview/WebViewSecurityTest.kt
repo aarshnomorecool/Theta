@@ -79,7 +79,11 @@ class WebViewSecurityTest {
         override fun onRendererGone() = Unit
     }
 
-    private fun newWebView(events: TabEvents, blocker: RequestBlocker = RequestBlocker { false }): WebView {
+    private fun newWebView(
+        events: TabEvents,
+        blocker: RequestBlocker = RequestBlocker { false },
+        cosmetics: CosmeticFilter = CosmeticFilter.None,
+    ): WebView {
         var created: WebView? = null
         instrumentation.runOnMainSync {
             val context = ApplicationProvider.getApplicationContext<android.content.Context>()
@@ -90,6 +94,7 @@ class WebViewSecurityTest {
                     interceptor = RequestInterceptor(blocker) { false },
                     externalLinks = ExternalLinks(context),
                     onRendererGone = {},
+                    cosmetics = cosmetics,
                 )
             }
         }
@@ -126,6 +131,51 @@ class WebViewSecurityTest {
         assertTrue("SSL error was not reported", events.errorSeen.await(TIMEOUT_SECONDS, TimeUnit.SECONDS))
         assertTrue(events.errors.single() is PageError.Ssl)
         assertEquals("The page must never be served after an SSL error", 0, server.requestCount)
+    }
+
+    /** A cookie bar the filter names is hidden once the page has loaded, and the page can scroll again. */
+    @Test
+    fun cookiePopUpIsHiddenAndScrollingComesBack() {
+        server.enqueue(
+            MockResponse.Builder()
+                .addHeader("Content-Type", "text/html")
+                .body(
+                    "<html><body style='overflow:hidden'><p class='story'>News</p>" +
+                        "<div id='cookie-bar' style='position:fixed;bottom:0'>We use cookies</div></body></html>",
+                )
+                .build(),
+        )
+        server.start()
+        val seen = mutableListOf<String>()
+        val filter = object : CosmeticFilter {
+            override val isActive = true
+            override fun selectorsFor(pageUrl: String, ids: List<String>, classes: List<String>): HiddenSelectors {
+                seen += ids
+                val hidden = listOf("#cookie-bar").filter { it.removePrefix("#") in ids }
+                return HiddenSelectors(hidden, hidden)
+            }
+        }
+        val events = RecordingEvents()
+        val view = newWebView(events, cosmetics = filter)
+        instrumentation.runOnMainSync { view.loadUrl(server.url("/news").toString()) }
+        assertTrue(events.finished.await(TIMEOUT_SECONDS, TimeUnit.SECONDS))
+
+        val script = "[getComputedStyle(document.getElementById('cookie-bar')).display," +
+            "getComputedStyle(document.body).overflow].join()"
+        var result = ""
+        repeat(POLLS) {
+            val answer = CountDownLatch(1)
+            instrumentation.runOnMainSync {
+                view.evaluateJavascript(script) {
+                    result = it
+                    answer.countDown()
+                }
+            }
+            answer.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            if (result == "\"none,auto\"") return
+            Thread.sleep(POLL_MILLIS)
+        }
+        assertEquals("ids the page reported: $seen", "\"none,auto\"", result)
     }
 
     @Test
@@ -186,5 +236,7 @@ class WebViewSecurityTest {
 
     private companion object {
         const val TIMEOUT_SECONDS = 30L
+        const val POLLS = 20
+        const val POLL_MILLIS = 250L
     }
 }

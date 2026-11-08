@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.2.0 (2026-11-08)
+
+### Added in 0.2.0 after the UI rework
+
+- Cookie pop-up blocking, on by default with its own switch in Shields and privacy: consent pop-up scripts are blocked
+  and pop-ups that get through are hidden, without ever accepting cookies. Uses the EasyList Cookie List (CC BY 3.0),
+  bundled and refreshed weekly with the other lists. Not counted in the privacy stats.
+- One native ad unit per screen (new tab, downloads, bookmarks, history), so AdMob reports show what each earns.
+- The app version lives in `app/version.properties`; `versionCode` is derived from it. Release steps are in
+  `docs/RELEASING.md`, AdMob and store setup in `docs/STORES.md`.
+
+### Removed in 0.2.0
+
+- Full-screen (interstitial) ads, and the unused banner and interstitial ad unit settings. They stay out until the
+  VPN feature.
+
 ### Added
 
 - Gradle multi-module project on AGP 9.3, Kotlin 2.4 and Gradle 9.5, with convention plugins in `build-logic`, ktlint,

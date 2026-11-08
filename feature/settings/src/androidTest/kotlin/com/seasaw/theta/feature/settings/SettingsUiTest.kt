@@ -96,7 +96,8 @@ class SettingsUiTest {
     @Test
     fun filterListsAndIconsAreCredited() {
         showSettings(page = SettingsPage.LICENCES)
-        compose.onNodeWithText("EasyList", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("EasyList, EasyPrivacy and IndianList").assertIsDisplayed()
+        compose.onNodeWithText("EasyList Cookie List").assertIsDisplayed()
         compose.onNodeWithText("Lucide icons").assertIsDisplayed()
     }
 

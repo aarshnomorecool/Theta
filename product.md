@@ -171,14 +171,14 @@ Breaking these can get the AdMob account banned or the app pulled. Treat them li
 
 1. **No ad may be visible on screen while third-party web content is visible.** Ads go only on native screens:
    - New-tab page
-   - Tab switcher
    - Downloads list
    - Bookmarks and history lists
 
    This prevents "framed content" violations.
 2. **Never inject ads into web pages, and never modify ads on web pages.**
 3. **The ad blocker must not block or interfere with our own AdMob ads.** Its scope is WebView requests only.
-4. **Interstitials:**
+4. **Interstitials:** currently **off**. The code was removed in 0.2.0, and full-screen ads stay out until the VPN
+   feature ships. If they return:
    - Only at native-to-native transitions, for example closing the tab switcher back to the new-tab page.
    - Never on app launch in the first session.
    - Never while a page is loading.

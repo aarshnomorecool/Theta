@@ -54,9 +54,6 @@ class MainActivity : ComponentActivity() {
     /** A URL handed over by another app, until the browser has picked it up. */
     private var incomingUrl by mutableStateOf<String?>(null)
 
-    /** Snapshot taken at launch: ads rule 4 is about this whole session, even once the flag flips underneath it. */
-    private var isFirstSession = true
-
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocales.wrap(newBase))
     }
@@ -97,7 +94,6 @@ class MainActivity : ComponentActivity() {
                         incomingUrl = incomingUrl,
                         onIncomingUrlHandled = { incomingUrl = null },
                         adsManager = ads,
-                        isFirstSession = { isFirstSession },
                         browserViewModel = browserViewModel,
                     )
                 }
@@ -110,7 +106,6 @@ class MainActivity : ComponentActivity() {
         reportFullyDrawn()
         deferredStartup.run()
         lifecycleScope.launch {
-            isFirstSession = !settings.settings.first().firstSessionCompleted
             // Ads rule 8: UMP runs before any ad, and the DPDP notice comes before both.
             settings.settings.filter { it.privacyNoticeAccepted }.first()
             ads.start(this@MainActivity)

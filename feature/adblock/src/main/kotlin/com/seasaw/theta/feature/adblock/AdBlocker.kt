@@ -7,6 +7,7 @@ import com.seasaw.theta.core.config.AppConfig
 import com.seasaw.theta.core.data.AdBlockExemptionsRepository
 import com.seasaw.theta.core.data.PrivacyStatsRepository
 import com.seasaw.theta.core.data.settings.SettingsRepository
+import com.seasaw.theta.core.webview.CosmeticFilter
 import com.seasaw.theta.core.webview.InterceptedRequest
 import com.seasaw.theta.core.webview.RequestBlocker
 import com.seasaw.theta.core.webview.ResourceKind
@@ -39,6 +40,7 @@ class AdBlocker @Inject constructor(
     private val exemptions: AdBlockExemptionsRepository,
     private val config: AppConfig,
     private val stats: PrivacyStatsRepository,
+    private val cookies: CookieNoticeBlocker,
     @ApplicationScope private val scope: CoroutineScope,
 ) : RequestBlocker {
     @Volatile
@@ -56,6 +58,7 @@ class AdBlocker @Inject constructor(
     fun start() {
         if (!started.compareAndSet(false, true)) return
         stats.start()
+        cookies.start()
         settings.settings.onEach { enabledByUser = it.adBlockEnabled }.launchIn(scope)
         exemptions.observeHosts().onEach { exemptSites = it.toHashSet() }.launchIn(scope)
         scope.launch {
@@ -80,14 +83,22 @@ class AdBlocker @Inject constructor(
     }
 
     override fun shouldBlock(request: InterceptedRequest): Boolean {
-        val current = engine
-        val isActive = current != null && enabledByUser && config.adBlockEnabled
-        val host = if (isActive) UrlUtils.hostOf(request.url) else null
-        if (current == null || host == null) return false
-
+        val host = UrlUtils.hostOf(request.url) ?: return false
         val pageHost = request.pageUrl?.let(UrlUtils::hostOf)
+        if (blocksAdOrTracker(request, host, pageHost)) {
+            // Only a running total is kept, never what was blocked or where.
+            stats.recordBlocked()
+            return true
+        }
+        // Cookie pop-ups have their own setting, and are not counted as ads or trackers in the stats.
+        return cookies.shouldBlock(request, host, pageHost)
+    }
+
+    private fun blocksAdOrTracker(request: InterceptedRequest, host: String, pageHost: String?): Boolean {
+        val current = engine
+        if (current == null || !enabledByUser || !config.adBlockEnabled) return false
         if (pageHost != null && isExempt(pageHost)) return false
-        val blocked = current.shouldBlock(
+        return current.shouldBlock(
             url = request.url,
             host = host,
             pageUrl = request.pageUrl,
@@ -95,9 +106,6 @@ class AdBlocker @Inject constructor(
             isThirdParty = UrlUtils.isThirdParty(host, pageHost),
             type = request.kind.toResourceType(),
         )
-        // Only a running total is kept, never what was blocked or where.
-        if (blocked) stats.recordBlocked()
-        return blocked
     }
 }
 
@@ -120,4 +128,7 @@ internal fun ResourceKind.toResourceType(): ResourceType = when (this) {
 internal abstract class AdBlockModule {
     @Binds
     abstract fun requestBlocker(implementation: AdBlocker): RequestBlocker
+
+    @Binds
+    abstract fun cosmeticFilter(implementation: CookieNoticeBlocker): CosmeticFilter
 }

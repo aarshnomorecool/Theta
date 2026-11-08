@@ -136,4 +136,8 @@
     <string name="licence_kotlin">Kotlin and kotlinx</string>
     <string name="licence_okhttp">OkHttp</string>
     <string name="licence_apache">Apache License 2.0</string>
+    <string name="settings_block_cookie_notices">Block cookie pop-ups</string>
+    <string name="settings_block_cookie_notices_summary">Hides cookie consent banners on websites. Theta never accepts cookies for you.</string>
+    <string name="licence_cookies">EasyList Cookie List</string>
+    <string name="licence_cookies_terms">Cookie pop-up filters by the EasyList authors · CC BY 3.0</string>
 </resources>

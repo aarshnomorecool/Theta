@@ -36,6 +36,7 @@ enum class SettingFlag(name: String, internal val default: Boolean) {
     BLOCK_AUTOPLAY("block_autoplay", true),
     HIGH_CONTRAST("high_contrast", false),
     ZOOM_BUTTONS("show_zoom_buttons", false),
+    BLOCK_COOKIE_NOTICES("block_cookie_notices", true),
     ;
 
     internal val key = booleanPreferencesKey(name)
@@ -56,7 +57,7 @@ data class UserSettings(
     /** Crash reports and analytics stay off unless the user opts in on the consent screen. */
     val diagnosticsConsent: Boolean = false,
 
-    /** Ads rule 4: no interstitial on launch in the first session. */
+    /** Kept for ads rule 4, so interstitials can respect the first session if they ever return. */
     val firstSessionCompleted: Boolean = false,
 
     /** History shows one row per site, which keeps runs of short videos or articles from burying everything else. */
@@ -69,6 +70,9 @@ data class UserSettings(
 
     /** Tab switcher shows a small picture of each page rather than only its title. */
     val tabPreviews: Boolean = SettingFlag.TAB_PREVIEWS.default,
+
+    /** Cookie consent pop-ups are hidden, never accepted. */
+    val blockCookieNotices: Boolean = SettingFlag.BLOCK_COOKIE_NOTICES.default,
 
     /** Pages may not start playing sound or video until the user taps. */
     val blockAutoplay: Boolean = SettingFlag.BLOCK_AUTOPLAY.default,

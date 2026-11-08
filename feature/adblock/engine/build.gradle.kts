@@ -20,3 +20,14 @@ tasks.register<JavaExec>("updateBundledFilters") {
         "https://easylist-downloads.adblockplus.org/indianlist.txt",
     )
 }
+
+tasks.register<JavaExec>("updateBundledCookieList") {
+    group = "filters"
+    description = "Downloads the cookie notice list and writes the pre-compiled pack into :feature:adblock assets."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.seasaw.theta.feature.adblock.engine.CookiePackCompilerMainKt")
+    args(
+        file("../src/main/assets/cookies.bin").path,
+        "https://secure.fanboy.co.nz/fanboy-cookiemonster.txt",
+    )
+}

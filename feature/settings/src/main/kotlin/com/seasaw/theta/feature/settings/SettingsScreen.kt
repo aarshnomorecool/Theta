@@ -64,6 +64,7 @@ import java.text.NumberFormat
 internal object SettingsTestTags {
     const val DELETE_ALL = "settings_delete_all"
     const val ADBLOCK = "settings_adblock"
+    const val COOKIE_NOTICES = "settings_cookie_notices"
     const val LITE = "settings_lite"
     const val HIGH_CONTRAST = "settings_high_contrast"
     const val TEXT_SIZE = "settings_text_size"
@@ -198,6 +199,7 @@ private class SearchEntry(val titleRes: Int, val page: SettingsPage)
 private val searchEntries = listOf(
     SearchEntry(R.string.settings_shields, SettingsPage.SHIELDS),
     SearchEntry(R.string.settings_adblock, SettingsPage.SHIELDS),
+    SearchEntry(R.string.settings_block_cookie_notices, SettingsPage.SHIELDS),
     SearchEntry(R.string.settings_reset_stats, SettingsPage.SHIELDS),
     SearchEntry(R.string.settings_diagnostics, SettingsPage.SHIELDS),
     SearchEntry(R.string.settings_search_engine, SettingsPage.SEARCH_ENGINE),

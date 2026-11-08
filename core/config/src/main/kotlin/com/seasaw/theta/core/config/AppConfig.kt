@@ -12,15 +12,13 @@ interface AppConfig {
     /** Kill switch: stops all ad loading. */
     val adsEnabled: Boolean
 
-    /** Kill switch: stops interstitials only. */
-    val interstitialsEnabled: Boolean
-
     /** Kill switch: disables the ad blocker if a bad filter list breaks sites in the field. */
     val adBlockEnabled: Boolean
 
-    /** Ads rule 4: the minimum time between interstitials. */
-    val interstitialMinIntervalSeconds: Long
     val filterListUrls: List<String>
+
+    /** The cookie notice list, kept apart from [filterListUrls] because it has its own setting. */
+    val cookieListUrl: String
 
     /** Empty until the policy is published. Callers hide the link rather than open a dead page. */
     val privacyPolicyUrl: String
@@ -31,16 +29,13 @@ interface AppConfig {
 
 object ConfigKeys {
     const val ADS_ENABLED = "ads_enabled"
-    const val INTERSTITIALS_ENABLED = "interstitials_enabled"
     const val ADBLOCK_ENABLED = "adblock_enabled"
-    const val INTERSTITIAL_MIN_INTERVAL_SECONDS = "interstitial_min_interval_seconds"
     const val FILTER_LIST_URLS = "filter_list_urls"
+    const val COOKIE_LIST_URL = "cookie_list_url"
     const val PRIVACY_POLICY_URL = "privacy_policy_url"
 }
 
 object ConfigDefaults {
-    const val INTERSTITIAL_MIN_INTERVAL_SECONDS = 240L
-
     /** EasyList and EasyPrivacy, plus IndianList for the primary market. All three share the EasyList licence. */
     private val FILTER_LISTS = listOf(
         "https://easylist.to/easylist/easylist.txt",
@@ -48,15 +43,17 @@ object ConfigDefaults {
         "https://easylist-downloads.adblockplus.org/indianlist.txt",
     )
 
+    /** EasyList Cookie List (CC BY 3.0, by the EasyList authors), which hides cookie consent pop-ups. */
+    const val COOKIE_LIST_URL = "https://secure.fanboy.co.nz/fanboy-cookiemonster.txt"
+
     /** Remote Config only holds strings, so the default list is stored in the same JSON form a remote value uses. */
     val FILTER_LIST_URLS: String = FILTER_LISTS.joinToString(separator = ",", prefix = "[", postfix = "]") { "\"$it\"" }
 
     val all: Map<String, Any> = mapOf(
         ConfigKeys.ADS_ENABLED to true,
-        ConfigKeys.INTERSTITIALS_ENABLED to true,
         ConfigKeys.ADBLOCK_ENABLED to true,
-        ConfigKeys.INTERSTITIAL_MIN_INTERVAL_SECONDS to INTERSTITIAL_MIN_INTERVAL_SECONDS,
         ConfigKeys.FILTER_LIST_URLS to FILTER_LIST_URLS,
+        ConfigKeys.COOKIE_LIST_URL to COOKIE_LIST_URL,
         ConfigKeys.PRIVACY_POLICY_URL to "",
     )
 }
@@ -72,14 +69,7 @@ interface ConfigSource {
 @Singleton
 internal class RemoteAppConfig @Inject constructor(private val source: ConfigSource) : AppConfig {
     override val adsEnabled: Boolean get() = source.boolean(ConfigKeys.ADS_ENABLED)
-    override val interstitialsEnabled: Boolean get() = source.boolean(ConfigKeys.INTERSTITIALS_ENABLED)
     override val adBlockEnabled: Boolean get() = source.boolean(ConfigKeys.ADBLOCK_ENABLED)
-
-    // A remote value of 0 or a negative number would remove the frequency cap, which the ad policy does not allow.
-    override val interstitialMinIntervalSeconds: Long
-        get() = source.long(ConfigKeys.INTERSTITIAL_MIN_INTERVAL_SECONDS)
-            .takeIf { it >= MIN_ALLOWED_INTERVAL_SECONDS }
-            ?: ConfigDefaults.INTERSTITIAL_MIN_INTERVAL_SECONDS
 
     override val filterListUrls: List<String>
         get() = parseUrlList(source.string(ConfigKeys.FILTER_LIST_URLS))
@@ -95,7 +85,7 @@ internal class RemoteAppConfig @Inject constructor(private val source: ConfigSou
         (Json.parseToJsonElement(raw) as JsonArray).mapNotNull { it.jsonPrimitive.contentOrNull }
     }.getOrDefault(emptyList()).filter { it.startsWith("https://") }
 
-    private companion object {
-        const val MIN_ALLOWED_INTERVAL_SECONDS = 60L
-    }
+    override val cookieListUrl: String
+        get() = source.string(ConfigKeys.COOKIE_LIST_URL).takeIf { it.startsWith("https://") }
+            ?: ConfigDefaults.COOKIE_LIST_URL
 }

@@ -32,6 +32,7 @@ Collection is off in the manifest, and is enabled from the user's stored consent
 | Request | When | Contains |
 |---|---|---|
 | Filter lists (EasyList, EasyPrivacy, IndianList) | Weekly, on unmetered networks only | Nothing about the user. https only. |
+| Cookie notice list (EasyList Cookie List) | Weekly, with the filter lists | Nothing about the user. https only. |
 | Firebase Remote Config | After first frame, at most every 6 hours | Standard Firebase instance data. |
 
 ## Permissions

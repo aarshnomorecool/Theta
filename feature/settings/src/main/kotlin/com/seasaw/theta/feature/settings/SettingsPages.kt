@@ -109,6 +109,14 @@ private fun ShieldsPage(state: SettingsUiState, actions: SettingsActions) {
             tag = SettingsTestTags.ADBLOCK,
         )
         ToggleRow(
+            stringResource(R.string.settings_block_cookie_notices),
+            current.blockCookieNotices,
+            { actions.onEvent(SettingsUiEvent.Toggle(SettingFlag.BLOCK_COOKIE_NOTICES, it)) },
+            summary = stringResource(R.string.settings_block_cookie_notices_summary),
+            icon = ThetaIcons.Cookie,
+            tag = SettingsTestTags.COOKIE_NOTICES,
+        )
+        ToggleRow(
             stringResource(R.string.settings_ntp_stats),
             current.ntpShowPrivacyStats,
             { actions.onEvent(SettingsUiEvent.Toggle(SettingFlag.NTP_STATS, it)) },
@@ -540,6 +548,7 @@ private class Licence(val nameRes: Int, val termsRes: Int, val url: String, val 
 
 private val licences = listOf(
     Licence(R.string.licence_filters, R.string.licence_filters_terms, "https://easylist.to/pages/licence.html"),
+    Licence(R.string.licence_cookies, R.string.licence_cookies_terms, "https://easylist.to/"),
     Licence(R.string.licence_icons, R.string.licence_icons_terms, "https://lucide.dev/license", R.raw.lucide_licence),
     Licence(R.string.licence_android, R.string.licence_apache, "https://www.apache.org/licenses/LICENSE-2.0"),
     Licence(R.string.licence_kotlin, R.string.licence_apache, "https://www.apache.org/licenses/LICENSE-2.0"),

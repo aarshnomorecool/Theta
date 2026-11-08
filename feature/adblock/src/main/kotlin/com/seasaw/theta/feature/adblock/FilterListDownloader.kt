@@ -4,6 +4,8 @@ import com.seasaw.theta.core.common.AppError
 import com.seasaw.theta.core.common.AppResult
 import com.seasaw.theta.core.common.IoDispatcher
 import com.seasaw.theta.core.common.resultOf
+import com.seasaw.theta.feature.adblock.engine.CookiePack
+import com.seasaw.theta.feature.adblock.engine.CookiePackCompiler
 import com.seasaw.theta.feature.adblock.engine.FilterCompiler
 import com.seasaw.theta.feature.adblock.engine.FilterSnapshot
 import dagger.Module
@@ -32,29 +34,39 @@ class FilterListDownloader @Inject constructor(
             if (failure is IOException) AppError.Network else AppError.Unexpected(failure)
         }) {
             val compiler = FilterCompiler()
-            urls.forEach { url -> fetchInto(url, compiler) }
+            urls.forEach { url -> fetchInto(url, compiler::addLine) }
             compiler.build()
         }
     }
 
-    private fun fetchInto(url: String, compiler: FilterCompiler) {
+    suspend fun downloadCookiePack(url: String): AppResult<CookiePack> = withContext(dispatcher) {
+        resultOf(mapError = { failure ->
+            if (failure is IOException) AppError.Network else AppError.Unexpected(failure)
+        }) {
+            val compiler = CookiePackCompiler()
+            fetchInto(url, compiler::addLine)
+            compiler.build()
+        }
+    }
+
+    private fun fetchInto(url: String, addLine: (String) -> Unit) {
         // Lists decide what users can load, so plain http would let anyone on the network rewrite them.
         if (!url.startsWith("https://")) throw IOException("Refusing a filter list that is not https")
         val request = Request.Builder().url(url).build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Filter list request failed with ${response.code}")
             val reader = response.body.charStream().buffered()
-            readLimited(reader, compiler)
+            readLimited(reader, addLine)
         }
     }
 
     /** A misconfigured or hostile URL must not be able to run a budget phone out of memory. */
-    private fun readLimited(reader: BufferedReader, compiler: FilterCompiler) {
+    private fun readLimited(reader: BufferedReader, addLine: (String) -> Unit) {
         var total = 0L
         reader.lineSequence().forEach { line ->
             total += line.length
             if (total > MAX_LIST_CHARS) throw IOException("Filter list is larger than the limit")
-            compiler.addLine(line)
+            addLine(line)
         }
     }
 

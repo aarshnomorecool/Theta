@@ -117,6 +117,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
             blockAutoplay = preferences.flag(SettingFlag.BLOCK_AUTOPLAY),
             highContrast = preferences.flag(SettingFlag.HIGH_CONTRAST),
             showZoomButtons = preferences.flag(SettingFlag.ZOOM_BUTTONS),
+            blockCookieNotices = preferences.flag(SettingFlag.BLOCK_COOKIE_NOTICES),
         )
     }
 

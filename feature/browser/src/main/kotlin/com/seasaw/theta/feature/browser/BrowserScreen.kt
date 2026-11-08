@@ -62,7 +62,6 @@ import com.seasaw.theta.core.webview.PageError
  *
  * @param newTabContent the new-tab page. It belongs to another feature, and features cannot depend on each other, so
  * the app passes it in.
- * @param onClosedSwitcherToNewTab a native-to-native transition, the one place an interstitial is allowed (ads rule 4)
  */
 @Composable
 fun BrowserRoute(
@@ -70,7 +69,6 @@ fun BrowserRoute(
     navigation: BrowserNavigation,
     incomingUrl: String?,
     onIncomingUrlHandled: () -> Unit,
-    onClosedSwitcherToNewTab: (isPageLoading: Boolean) -> Unit,
     newTabContent: @Composable (onOpenUrl: (String) -> Unit) -> Unit,
     viewModel: BrowserViewModel = hiltViewModel(),
 ) {
@@ -107,7 +105,6 @@ fun BrowserRoute(
         onEvent = viewModel::onEvent,
         webViewFor = viewModel::webView,
         onOpenExternal = { prompt -> activity?.let { viewModel.launchExternal(prompt.link, it) } },
-        onClosedSwitcherToNewTab = onClosedSwitcherToNewTab,
         newTabContent = newTabContent,
     )
 }
@@ -119,7 +116,6 @@ internal fun BrowserScreen(
     onEvent: (BrowserUiEvent) -> Unit,
     webViewFor: (String) -> android.webkit.WebView?,
     onOpenExternal: (BrowserPrompt.OpenExternally) -> Unit,
-    onClosedSwitcherToNewTab: (Boolean) -> Unit,
     newTabContent: @Composable (onOpenUrl: (String) -> Unit) -> Unit,
 ) {
     val tab = state.selectedTab
@@ -158,7 +154,7 @@ internal fun BrowserScreen(
 
     BackHandler(enabled = state.isTabSwitcherOpen || state.find != null || tab?.isNewTab == false) {
         when {
-            state.isTabSwitcherOpen -> closeSwitcher(state, onEvent, onClosedSwitcherToNewTab)
+            state.isTabSwitcherOpen -> onEvent(BrowserUiEvent.ShowTabSwitcher(false))
             state.find != null -> onEvent(BrowserUiEvent.CloseFind)
             else -> onEvent(BrowserUiEvent.GoBack)
         }
@@ -178,7 +174,7 @@ internal fun BrowserScreen(
                 state = state,
                 onEvent = onEvent,
                 navigation = SwitcherNavigation(
-                    onDismiss = { closeSwitcher(state, onEvent, onClosedSwitcherToNewTab) },
+                    onDismiss = { onEvent(BrowserUiEvent.ShowTabSwitcher(false)) },
                     onSettings = navigation.onSettings,
                     onClearBrowsingData = navigation.onClearBrowsingData,
                 ),
@@ -298,16 +294,6 @@ private const val ZOOM_STEP = 10
 
 /** A page from the web is on screen, rather than the new-tab page or an error. */
 private fun BrowserTab?.showsWebPage(): Boolean = this != null && !isNewTab && error == null
-
-private fun closeSwitcher(
-    state: BrowserUiState,
-    onEvent: (BrowserUiEvent) -> Unit,
-    onClosedToNewTab: (Boolean) -> Unit,
-) {
-    onEvent(BrowserUiEvent.ShowTabSwitcher(false))
-    val tab = state.selectedTab
-    if (tab?.isNewTab == true && !tab.isIncognito) onClosedToNewTab(state.tabs.any { it.isLoading })
-}
 
 /** Hosts the pool's WebView. The pool owns its lifetime: leaving the composition only detaches the view. */
 @Composable
@@ -463,7 +449,6 @@ private fun BrowserPreview() {
             onEvent = {},
             webViewFor = { null },
             onOpenExternal = {},
-            onClosedSwitcherToNewTab = {},
             newTabContent = { Text("New tab page") },
         )
     }

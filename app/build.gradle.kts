@@ -20,6 +20,16 @@ val localProperties = Properties().apply {
 
 fun secret(name: String): String? = System.getenv(name) ?: localProperties.getProperty(name)
 
+val appVersionName: String = Properties().apply {
+    file("version.properties").inputStream().use(::load)
+}.getProperty("versionName")
+
+/** major * 10000 + minor * 100 + patch. Each part must stay below 100, so 0.99.99 is the last 0.x version. */
+val appVersionCode: Int = appVersionName.split('.').map(String::toInt).let { (major, minor, patch) ->
+    require(minor < 100 && patch < 100) { "Minor and patch must be below 100: $appVersionName" }
+    major * 10_000 + minor * 100 + patch
+}
+
 // Google's published test app ID. Safe to commit, and the only one debug builds ever use (ads rule 9).
 val testAdMobAppId = "ca-app-pub-3940256099942544~3347511713"
 val releaseAdMobAppId = secret("ADMOB_APP_ID").orEmpty()
@@ -35,8 +45,8 @@ android {
         // Placeholder from product.md. Source packages use com.seasaw.theta instead because `in` is a hard keyword in
         // Kotlin, so the final store ID can change here without touching any source file.
         applicationId = "in.seasaw.browser"
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
         manifestPlaceholders["admobAppId"] = testAdMobAppId
     }
 
@@ -78,7 +88,13 @@ androidComponents {
 }
 
 // An empty ID crashes the Ads SDK on launch, so a release build without one must fail here and not in users' hands.
-val requiredAdSecrets = listOf("ADMOB_APP_ID", "ADMOB_NATIVE_ID", "ADMOB_INTERSTITIAL_ID").filter {
+val requiredAdSecrets = listOf(
+    "ADMOB_APP_ID",
+    "ADMOB_NATIVE_NEW_TAB_ID",
+    "ADMOB_NATIVE_DOWNLOADS_ID",
+    "ADMOB_NATIVE_BOOKMARKS_ID",
+    "ADMOB_NATIVE_HISTORY_ID",
+).filter {
     secret(it).isNullOrEmpty()
 }
 tasks.matching { it.name == "bundleRelease" || it.name == "assembleRelease" }.configureEach {

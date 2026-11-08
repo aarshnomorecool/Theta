@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 class WebViewFactory @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val blocker: RequestBlocker,
+    private val cosmetics: CosmeticFilter,
     private val externalLinks: ExternalLinks,
     private val permissions: SitePermissionCoordinator,
     private val incognito: IncognitoProfiles,
@@ -60,7 +61,7 @@ class WebViewFactory @Inject constructor(
         LockedWebSettings.apply(webView.settings)
         webView.settings.applyPreferences(preferences, WebSettings.getDefaultUserAgent(appContext))
 
-        webView.webViewClient = ThetaWebViewClient(events, interceptor, externalLinks, onRendererGone)
+        webView.webViewClient = ThetaWebViewClient(events, interceptor, externalLinks, onRendererGone, cosmetics)
         webView.webChromeClient = ThetaWebChromeClient(
             events = events,
             permissions = permissions,

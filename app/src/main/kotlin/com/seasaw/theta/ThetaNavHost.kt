@@ -1,10 +1,6 @@
 package com.seasaw.theta
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,11 +33,9 @@ internal fun ThetaNavHost(
     incomingUrl: String?,
     onIncomingUrlHandled: () -> Unit,
     adsManager: AdsManager,
-    isFirstSession: () -> Boolean,
     browserViewModel: BrowserViewModel,
 ) {
     val navController = rememberNavController()
-    val activity = LocalContext.current.findActivity()
 
     /** History and bookmarks hand a URL back to the browser and then get out of the way. */
     fun openInBrowser(url: String) {
@@ -62,11 +56,6 @@ internal fun ThetaNavHost(
                 navigation = navController.toBrowserNavigation(),
                 incomingUrl = incomingUrl,
                 onIncomingUrlHandled = onIncomingUrlHandled,
-                onClosedSwitcherToNewTab = { isPageLoading ->
-                    if (activity != null) {
-                        adsManager.maybeShowInterstitial(activity, isFirstSession(), isPageLoading) { }
-                    }
-                },
                 newTabContent = { onOpenUrl -> NewTabRoute(onOpenUrl) },
                 viewModel = browserViewModel,
             )
@@ -107,9 +96,3 @@ private fun NavHostController.toBrowserNavigation() = BrowserNavigation(
     onSettings = { navigate(Routes.SETTINGS) },
     onClearBrowsingData = { navigate(Routes.CLEAR_DATA) },
 )
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}

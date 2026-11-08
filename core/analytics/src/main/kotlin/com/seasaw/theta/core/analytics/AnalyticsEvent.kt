@@ -61,7 +61,7 @@ internal object EventAllowlist {
         "filter_list_updated" to mapOf("result" to ParamRule.OneOf(setOf("success", "failure", "rejected"))),
         "ad_shown" to mapOf(
             "placement" to
-                ParamRule.OneOf(setOf("new_tab", "tab_switcher", "downloads", "bookmarks", "history", "interstitial")),
+                ParamRule.OneOf(setOf("new_tab", "downloads", "bookmarks", "history")),
         ),
     )
 

@@ -43,6 +43,7 @@ internal class ThetaWebViewClient(
     private val interceptor: RequestInterceptor,
     private val externalLinks: ExternalLinks,
     private val onRendererGone: () -> Unit,
+    private val cosmetics: CosmeticFilter = CosmeticFilter.None,
 ) : WebViewClient() {
     // Written from the main thread and read from WebView IO threads.
     @Volatile
@@ -74,7 +75,15 @@ internal class ThetaWebViewClient(
         events.onPageStarted(url)
     }
 
-    override fun onPageFinished(view: WebView, url: String) = events.onPageFinished(url)
+    override fun onPageFinished(view: WebView, url: String) {
+        events.onPageFinished(url)
+        CosmeticInjector.run(view, cosmetics)
+        // Consent pop-ups are often added by a script a moment after load, so look once more a little later.
+        view.postDelayed({ if (view.url == url) CosmeticInjector.run(view, cosmetics) }, LATE_PASS_MILLIS)
+    }
+
+    /** The first paint: hiding here means most pop-ups never flash on screen. */
+    override fun onPageCommitVisible(view: WebView, url: String) = CosmeticInjector.run(view, cosmetics)
 
     override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
         pageUrl = url
@@ -91,6 +100,10 @@ internal class ThetaWebViewClient(
         if (request.isForMainFrame) {
             events.onPageError(PageError.Network(request.url.toString(), error.errorCode))
         }
+    }
+
+    private companion object {
+        const val LATE_PASS_MILLIS = 2_500L
     }
 
     /** Returning true keeps the app alive. Without an override, a renderer crash takes the whole browser down. */

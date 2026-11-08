@@ -136,4 +136,8 @@
     <string name="licence_kotlin">Kotlin आणि kotlinx</string>
     <string name="licence_okhttp">OkHttp</string>
     <string name="licence_apache">Apache License 2.0</string>
+    <string name="settings_block_cookie_notices">कुकी पॉप-अप रोखा</string>
+    <string name="settings_block_cookie_notices_summary">वेबसाइटवरील कुकी संमती बॅनर लपवते. Theta तुमच्या वतीने कधीही कुकी स्वीकारत नाही.</string>
+    <string name="licence_cookies">EasyList Cookie List</string>
+    <string name="licence_cookies_terms">EasyList लेखकांचे कुकी पॉप-अप फिल्टर · CC BY 3.0</string>
 </resources>

@@ -17,10 +17,10 @@ class RemoteAppConfigTest {
     private fun config(vararg overrides: Pair<String, Any>) = RemoteAppConfig(FakeSource(mapOf(*overrides)))
 
     @Test
-    fun `defaults allow ads and cap interstitials at four minutes`() {
+    fun `defaults allow ads and ad blocking`() {
         val config = config()
         assertTrue(config.adsEnabled)
-        assertEquals(240L, config.interstitialMinIntervalSeconds)
+        assertTrue(config.adBlockEnabled)
     }
 
     @Test
@@ -28,13 +28,6 @@ class RemoteAppConfigTest {
         val config = config(ConfigKeys.ADS_ENABLED to false, ConfigKeys.ADBLOCK_ENABLED to false)
         assertFalse(config.adsEnabled)
         assertFalse(config.adBlockEnabled)
-    }
-
-    @Test
-    fun `a broken remote interval cannot remove the frequency cap`() {
-        assertEquals(240L, config(ConfigKeys.INTERSTITIAL_MIN_INTERVAL_SECONDS to 0L).interstitialMinIntervalSeconds)
-        assertEquals(240L, config(ConfigKeys.INTERSTITIAL_MIN_INTERVAL_SECONDS to -5L).interstitialMinIntervalSeconds)
-        assertEquals(600L, config(ConfigKeys.INTERSTITIAL_MIN_INTERVAL_SECONDS to 600L).interstitialMinIntervalSeconds)
     }
 
     @Test
@@ -46,6 +39,14 @@ class RemoteAppConfigTest {
                 "https://easylist-downloads.adblockplus.org/indianlist.txt",
             ),
             config().filterListUrls,
+        )
+    }
+
+    @Test
+    fun `an insecure cookie list url falls back to the default`() {
+        assertEquals(
+            ConfigDefaults.COOKIE_LIST_URL,
+            config(ConfigKeys.COOKIE_LIST_URL to "http://x.example/l").cookieListUrl,
         )
     }
 
