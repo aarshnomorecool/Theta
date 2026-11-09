@@ -48,5 +48,5 @@ Never requested: `QUERY_ALL_PACKAGES`, SMS, call log, accessibility.
 
 ## Open items before the first release
 
-- Publish the privacy policy, then set `privacy_policy_url` in Remote Config.
+- Privacy policy: published at https://aarshnomorecool.github.io/privacy.html (built into the app as the default).
 - Confirm the Firebase Analytics default-consent settings against the current Play form wording.

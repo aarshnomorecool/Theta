@@ -43,6 +43,9 @@ object ConfigDefaults {
         "https://easylist-downloads.adblockplus.org/indianlist.txt",
     )
 
+    /** Published on the project website. Remote Config can point elsewhere if the site ever moves. */
+    const val PRIVACY_POLICY_URL = "https://aarshnomorecool.github.io/privacy.html"
+
     /** EasyList Cookie List (CC BY 3.0, by the EasyList authors), which hides cookie consent pop-ups. */
     const val COOKIE_LIST_URL = "https://secure.fanboy.co.nz/fanboy-cookiemonster.txt"
 
@@ -54,7 +57,7 @@ object ConfigDefaults {
         ConfigKeys.ADBLOCK_ENABLED to true,
         ConfigKeys.FILTER_LIST_URLS to FILTER_LIST_URLS,
         ConfigKeys.COOKIE_LIST_URL to COOKIE_LIST_URL,
-        ConfigKeys.PRIVACY_POLICY_URL to "",
+        ConfigKeys.PRIVACY_POLICY_URL to PRIVACY_POLICY_URL,
     )
 }
 
@@ -76,7 +79,8 @@ internal class RemoteAppConfig @Inject constructor(private val source: ConfigSou
             .ifEmpty { parseUrlList(ConfigDefaults.FILTER_LIST_URLS) }
 
     override val privacyPolicyUrl: String
-        get() = source.string(ConfigKeys.PRIVACY_POLICY_URL).takeIf { it.startsWith("https://") }.orEmpty()
+        get() = source.string(ConfigKeys.PRIVACY_POLICY_URL).takeIf { it.startsWith("https://") }
+            ?: ConfigDefaults.PRIVACY_POLICY_URL
 
     override suspend fun refresh() = source.fetchAndActivate()
 

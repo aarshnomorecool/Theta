@@ -68,8 +68,11 @@ class RemoteAppConfigTest {
 
     @Test
     fun `privacy policy url must be https`() {
-        assertEquals("", config().privacyPolicyUrl)
-        assertEquals("", config(ConfigKeys.PRIVACY_POLICY_URL to "http://x.example").privacyPolicyUrl)
+        assertEquals(ConfigDefaults.PRIVACY_POLICY_URL, config().privacyPolicyUrl)
+        assertEquals(
+            ConfigDefaults.PRIVACY_POLICY_URL,
+            config(ConfigKeys.PRIVACY_POLICY_URL to "http://x.example").privacyPolicyUrl,
+        )
         assertEquals("https://x.example", config(ConfigKeys.PRIVACY_POLICY_URL to "https://x.example").privacyPolicyUrl)
     }
 }
