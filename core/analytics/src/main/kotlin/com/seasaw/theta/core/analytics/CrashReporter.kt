@@ -69,10 +69,16 @@ internal class FirebaseCrashReporter @Inject constructor(@ApplicationContext pri
         crashlytics?.isCrashlyticsCollectionEnabled = enabled
     }
 
+    private var installed: Thread.UncaughtExceptionHandler? = null
+
+    /** Safe to call again: it only wraps a handler that someone installed after the last call. */
     override fun installUncaughtExceptionScrubber() {
         val delegate = Thread.getDefaultUncaughtExceptionHandler() ?: return
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+        if (delegate === installed) return
+        val scrubbing = Thread.UncaughtExceptionHandler { thread, throwable ->
             delegate.uncaughtException(thread, LogScrubber.scrub(throwable))
         }
+        installed = scrubbing
+        Thread.setDefaultUncaughtExceptionHandler(scrubbing)
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -50,14 +53,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.seasaw.theta.core.common.url.UrlUtils
 import com.seasaw.theta.core.ui.ConfirmDialog
 import com.seasaw.theta.core.ui.SiteIcon
@@ -314,40 +311,44 @@ private fun SwitcherTopBar(
     menu: @Composable (onDismiss: () -> Unit) -> Unit,
 ) {
     var isMenuOpen by remember { mutableStateOf(false) }
-    Box(
+    Row(
         Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .padding(horizontal = 8.dp),
+            .padding(start = 12.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Labelled chips rather than bare icons: "4 open tabs" says more than a number in a box. They scroll
+        // sideways when a long translation does not fit.
         Row(
             Modifier
-                .align(Alignment.Center)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                .weight(1f)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            PageButton(
+            PageChip(
                 isSelected = page == SwitcherPage.TABS,
                 label = pluralStringResource(R.plurals.switcher_tabs_label, regularCount, regularCount),
+                icon = ThetaIcons.Tabs,
                 onClick = { onPage(SwitcherPage.TABS) },
                 modifier = Modifier.testTag(TabSwitcherTestTags.REGULAR_SECTION),
-            ) { color -> CountSquare(regularCount, color) }
-            PageButton(
+            )
+            PageChip(
                 isSelected = page == SwitcherPage.PRIVATE,
                 label = pluralStringResource(R.plurals.switcher_private_label, privateCount, privateCount),
+                icon = ThetaIcons.Private,
                 onClick = { onPage(SwitcherPage.PRIVATE) },
                 modifier = Modifier.testTag(TabSwitcherTestTags.INCOGNITO_SECTION),
-            ) { color -> Icon(ThetaIcons.Private, null, tint = color, modifier = Modifier.size(22.dp)) }
-            PageButton(
+            )
+            PageChip(
                 isSelected = page == SwitcherPage.GROUPS,
                 label = stringResource(R.string.switcher_groups),
+                icon = ThetaIcons.Groups,
                 onClick = { onPage(SwitcherPage.GROUPS) },
                 modifier = Modifier.testTag(TabSwitcherTestTags.GROUPS_SECTION),
-            ) { color -> Icon(ThetaIcons.Groups, null, tint = color, modifier = Modifier.size(22.dp)) }
+            )
         }
-        Box(Modifier.align(Alignment.CenterEnd)) {
+        Box {
             IconButton(onClick = { isMenuOpen = true }, Modifier.testTag(TabSwitcherTestTags.MENU)) {
                 Icon(ThetaIcons.More, stringResource(R.string.more_options))
             }
@@ -359,42 +360,31 @@ private fun SwitcherTopBar(
 }
 
 @Composable
-private fun PageButton(
+private fun PageChip(
     isSelected: Boolean,
     label: String,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: @Composable (androidx.compose.ui.graphics.Color) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    Box(
+    val content = if (isSelected) colors.onPrimaryContainer else colors.onSurfaceVariant
+    Row(
         modifier = modifier
-            .size(width = 64.dp, height = 40.dp)
-            .clip(CircleShape)
+            .height(36.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(if (isSelected) colors.primaryContainer else colors.surfaceContainerHigh)
-            .combinedClickable(onClick = onClick)
-            .semantics {
-                contentDescription = label
-                role = Role.Tab
-                selected = isSelected
-            },
-        contentAlignment = Alignment.Center,
-    ) { icon(if (isSelected) colors.onPrimaryContainer else colors.onSurfaceVariant) }
-}
-
-@Composable
-private fun CountSquare(count: Int, color: androidx.compose.ui.graphics.Color) {
-    Box(
-        Modifier
-            .size(22.dp)
-            .border(1.75.dp, color, RoundedCornerShape(6.dp)),
-        contentAlignment = Alignment.Center,
+            .selectable(selected = isSelected, role = Role.Tab, onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        Icon(icon, null, tint = content, modifier = Modifier.size(18.dp))
         Text(
-            if (count > MAX_BADGE) "∞" else count.toString(),
-            color = color,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            color = content,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 8.dp),
         )
     }
 }
@@ -485,32 +475,39 @@ private fun SelectionBar(
     }
 }
 
+/** A labelled "New tab" button where the thumb rests, and a way back to the page. */
 @Composable
 private fun SwitcherBottomBar(onAdd: () -> Unit, addLabel: String, onDone: () -> Unit) {
-    Box(
+    Row(
         Modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .height(72.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
             onClick = onAdd,
-            shape = CircleShape,
+            shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
-            shadowElevation = 4.dp,
             modifier = Modifier
-                .align(Alignment.Center)
-                .size(56.dp)
+                .height(48.dp)
                 .testTag(TabSwitcherTestTags.NEW_TAB),
         ) {
-            Box(contentAlignment = Alignment.Center) { Icon(ThetaIcons.Plus, addLabel, Modifier.size(26.dp)) }
+            Row(Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(ThetaIcons.Plus, null, Modifier.size(22.dp))
+                Text(
+                    addLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
         }
-        TextButton(
-            onClick = onDone,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 12.dp),
-        ) { Text(stringResource(R.string.switcher_done), style = MaterialTheme.typography.labelLarge) }
+        Spacer(Modifier.weight(1f))
+        TextButton(onClick = onDone) {
+            Text(stringResource(R.string.switcher_done), style = MaterialTheme.typography.labelLarge)
+        }
     }
 }
 
@@ -712,52 +709,18 @@ private fun TabCard(
     Column(
         Modifier
             .clip(shape)
-            .background(colors.surfaceContainerHigh)
+            .background(colors.surfaceContainer)
             .border(if (highlighted) 2.dp else 1.dp, if (highlighted) colors.primary else colors.outlineVariant, shape)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .testTag(TabSwitcherTestTags.CARD_PREFIX + tab.id),
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .padding(start = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TabIcon(tab, size = 18.dp)
-            Text(
-                title,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp),
-            )
-            if (isChecked != null) {
-                Icon(
-                    if (isChecked) ThetaIcons.CheckCircle else ThetaIcons.Circle,
-                    null,
-                    tint = if (isChecked) colors.primary else colors.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(end = 10.dp)
-                        .size(20.dp),
-                )
-            } else {
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .testTag(TabSwitcherTestTags.CLOSE_PREFIX + tab.id),
-                ) { Icon(ThetaIcons.Close, stringResource(R.string.tabs_close_tab), Modifier.size(18.dp)) }
-            }
-        }
+        // The page itself comes first: it is what people recognise a tab by, more than its title.
         Box(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(PREVIEW_ASPECT)
-                .padding(start = 4.dp, end = 4.dp, bottom = 4.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .padding(start = 4.dp, end = 4.dp, top = 4.dp)
+                .clip(RoundedCornerShape(16.dp))
                 .background(colors.surfaceContainerLow),
             contentAlignment = Alignment.Center,
         ) {
@@ -773,7 +736,55 @@ private fun TabCard(
             } else {
                 PreviewPlaceholder(tab)
             }
+            if (isChecked != null) SelectionMark(isChecked, Modifier.align(Alignment.TopEnd))
         }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .padding(start = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TabIcon(tab, size = 18.dp)
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+            )
+            if (isChecked == null) {
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag(TabSwitcherTestTags.CLOSE_PREFIX + tab.id),
+                ) { Icon(ThetaIcons.Close, stringResource(R.string.tabs_close_tab), Modifier.size(18.dp)) }
+            }
+        }
+    }
+}
+
+/** The tick shown on a card in selection mode, on a backing disc so it reads over any page picture. */
+@Composable
+private fun SelectionMark(isChecked: Boolean, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .padding(8.dp)
+            .size(26.dp)
+            .clip(CircleShape)
+            .background(colors.surfaceContainerHighest),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (isChecked) ThetaIcons.CheckCircle else ThetaIcons.Circle,
+            null,
+            tint = if (isChecked) colors.primary else colors.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
@@ -844,15 +855,43 @@ private fun GroupCard(
     Column(
         Modifier
             .clip(shape)
-            .background(colors.surfaceContainerHigh)
+            .background(colors.surfaceContainer)
             .border(if (isChecked == true) 2.dp else 1.5.dp, if (isChecked == true) colors.primary else accent, shape)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .testTag(TabSwitcherTestTags.GROUP_PREFIX + group.id),
     ) {
+        Box {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(PREVIEW_ASPECT)
+                    .padding(start = 4.dp, end = 4.dp, top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                repeat(2) { row ->
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        repeat(2) { column ->
+                            val index = row * 2 + column
+                            MosaicCell(
+                                tab = tabs.getOrNull(index),
+                                preview = tabs.getOrNull(index)?.let { previews[it.id] },
+                                extra = if (index == MOSAIC_LAST && tabs.size > MOSAIC_SIZE) {
+                                    tabs.size - MOSAIC_LAST
+                                } else {
+                                    0
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+            if (isChecked != null) SelectionMark(isChecked, Modifier.align(Alignment.TopEnd))
+        }
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(40.dp)
+                .height(44.dp)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -866,47 +905,14 @@ private fun GroupCard(
                     .weight(1f)
                     .padding(horizontal = 8.dp),
             )
-            when {
-                isChecked != null -> Icon(
-                    if (isChecked) ThetaIcons.CheckCircle else ThetaIcons.Circle,
-                    null,
-                    tint = if (isChecked) colors.primary else colors.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-
-                group.isIncognito -> Icon(
-                    ThetaIcons.Private,
-                    null,
-                    Modifier.size(16.dp),
-                    tint = colors.onSurfaceVariant,
-                )
-
-                else -> Text(
+            if (group.isIncognito) {
+                Icon(ThetaIcons.Private, null, Modifier.size(16.dp), tint = colors.onSurfaceVariant)
+            } else {
+                Text(
                     tabs.size.toString(),
                     style = MaterialTheme.typography.labelMedium,
                     color = colors.onSurfaceVariant,
                 )
-            }
-        }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(PREVIEW_ASPECT)
-                .padding(start = 4.dp, end = 4.dp, bottom = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            repeat(2) { row ->
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    repeat(2) { column ->
-                        val index = row * 2 + column
-                        MosaicCell(
-                            tab = tabs.getOrNull(index),
-                            preview = tabs.getOrNull(index)?.let { previews[it.id] },
-                            extra = if (index == MOSAIC_LAST && tabs.size > MOSAIC_SIZE) tabs.size - MOSAIC_LAST else 0,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
             }
         }
     }
@@ -976,7 +982,6 @@ private fun SwitcherEmpty(icon: ImageVector, title: String, message: String) {
 private const val PREVIEW_ASPECT = 0.8f
 private const val MOSAIC_SIZE = 4
 private const val MOSAIC_LAST = 3
-private const val MAX_BADGE = 99
 
 @ThemePreviews
 @Composable

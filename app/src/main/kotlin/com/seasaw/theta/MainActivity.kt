@@ -61,7 +61,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        incomingUrl = intent.browsableUrl()
+        // A restored Activity, or one reopened from recent apps, still carries the old intent. Opening its link again
+        // would add a duplicate tab every time.
+        val isRelaunch = savedInstanceState != null ||
+            (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        incomingUrl = if (isRelaunch) null else intent.browsableUrl()
         setContent { Root() }
         window.decorView.post { onFirstFrameDrawn() }
     }

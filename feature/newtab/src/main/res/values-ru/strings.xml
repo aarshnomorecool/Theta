@@ -8,7 +8,6 @@
     <string name="speed_dial_remove_message">Удалить этот сайт с экспресс-панели?</string>
     <string name="recent_sites_title">Недавние сайты</string>
     <string name="top_sites_title">Популярные сайты</string>
-    <string name="stats_title">Статистика приватности</string>
     <string name="stats_blocked">Заблокировано рекламы и трекеров</string>
     <string name="stats_data">Сэкономлено трафика</string>
     <string name="stats_time">Сэкономлено времени</string>

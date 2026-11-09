@@ -17,6 +17,13 @@ tasks.register("connectedDebugAndroidTest") {
     dependsOn("connectedReleaseAndroidTest")
 }
 
+// AGP only creates unit tests for the tested build type, so without this the documented and CI command
+// `testDebugUnitTest` skipped this module's unit tests entirely.
+tasks.register("testDebugUnitTest") {
+    group = "verification"
+    dependsOn("testReleaseUnitTest")
+}
+
 dependencies {
     api(project(":feature:adblock:engine"))
     implementation(project(":core:analytics"))

@@ -12,8 +12,9 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import java.io.BufferedReader
+import java.io.FilterInputStream
 import java.io.IOException
+import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -54,31 +55,53 @@ class FilterListDownloader @Inject constructor(
         if (!url.startsWith("https://")) throw IOException("Refusing a filter list that is not https")
         val request = Request.Builder().url(url).build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Filter list request failed with ${response.code}")
-            val reader = response.body.charStream().buffered()
-            readLimited(reader, addLine)
-        }
-    }
+            val problem = when {
+                !response.isSuccessful -> "Filter list request failed with ${response.code}"
 
-    /** A misconfigured or hostile URL must not be able to run a budget phone out of memory. */
-    private fun readLimited(reader: BufferedReader, addLine: (String) -> Unit) {
-        var total = 0L
-        reader.lineSequence().forEach { line ->
-            total += line.length
-            if (total > MAX_LIST_CHARS) throw IOException("Filter list is larger than the limit")
-            addLine(line)
+                // A redirect may have moved the request. Plain http anywhere along the way defeats the check above.
+                !response.request.url.isHttps -> "Filter list was redirected off https"
+
+                else -> null
+            }
+            if (problem != null) throw IOException(problem)
+            val reader = LimitedInputStream(response.body.byteStream(), MAX_LIST_BYTES).bufferedReader()
+            reader.lineSequence().forEach(addLine)
         }
     }
 
     private companion object {
-        const val MAX_LIST_CHARS = 16L * 1024 * 1024
+        const val MAX_LIST_BYTES = 16L * 1024 * 1024
+    }
+}
+
+/**
+ * Fails once more than [limit] bytes have been read. Counting bytes rather than lines matters: one enormous line
+ * would otherwise be read into memory whole before any per-line check could run, which a misconfigured or hostile
+ * URL could use to run a budget phone out of memory.
+ */
+internal class LimitedInputStream(input: InputStream, private val limit: Long) : FilterInputStream(input) {
+    private var count = 0L
+
+    override fun read(): Int = super.read().also { if (it >= 0) add(1L) }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int =
+        super.read(b, off, len).also { if (it > 0) add(it.toLong()) }
+
+    override fun skip(n: Long): Long = super.skip(n).also(::add)
+
+    private fun add(bytes: Long) {
+        count += bytes
+        if (count > limit) throw IOException("Filter list is larger than the limit")
     }
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
 internal object FilterNetworkModule {
+    /** Never follows a redirect from https to http, which OkHttp otherwise allows by default. */
     @Provides
     @Singleton
-    fun okHttpClient(): OkHttpClient = OkHttpClient()
+    fun okHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .followSslRedirects(false)
+        .build()
 }

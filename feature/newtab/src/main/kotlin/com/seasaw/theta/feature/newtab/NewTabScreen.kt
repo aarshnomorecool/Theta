@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -51,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -74,6 +74,7 @@ import com.seasaw.theta.core.ui.R as CoreUiR
 import com.seasaw.theta.core.ui.SiteIcon
 import com.seasaw.theta.core.ui.ThemePreviews
 import com.seasaw.theta.core.ui.ThetaIcons
+import com.seasaw.theta.core.ui.ThetaMark
 import com.seasaw.theta.core.ui.ThetaTheme
 import java.util.Locale
 
@@ -191,9 +192,15 @@ private fun NewTabContent(
     onPin: (RecentSite) -> Unit,
     onAdd: () -> Unit,
 ) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp, bottom = 24.dp),
+        contentAlignment = Alignment.Center,
+    ) { ThetaMark() }
     val stats = state.stats
     if (state.showStats && stats != null) {
-        PrivacyStatsCard(stats, onPhoto)
+        PrivacyStatsStrip(stats, onPhoto)
         Spacer(Modifier.height(24.dp))
     }
     SectionLabel(
@@ -297,45 +304,47 @@ private fun GlassCard(onPhoto: Boolean, modifier: Modifier = Modifier, content: 
     ) { content() }
 }
 
+/**
+ * A slim row of three figures under one label. Worth seeing at a glance, but it should not crowd out the sites people
+ * came to this page to open.
+ */
 @Composable
-private fun PrivacyStatsCard(stats: PrivacyStats, onPhoto: Boolean) {
+private fun PrivacyStatsStrip(stats: PrivacyStats, onPhoto: Boolean) {
     val context = LocalContext.current
     val accent = if (onPhoto) Color(ACCENT_ON_PHOTO) else MaterialTheme.colorScheme.tertiary
-    GlassCard(onPhoto, Modifier.testTag(NewTabTestTags.STATS)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(ThetaIcons.ShieldCheck, null, tint = accent, modifier = Modifier.size(18.dp))
-            Text(
-                stringResource(R.string.stats_title),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp),
-            )
-            stats.countingSince?.let { since ->
-                Text(
-                    stringResource(
-                        R.string.stats_since,
-                        DateUtils.formatDateTime(context, since, DateUtils.FORMAT_ABBREV_MONTH),
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = LocalContentColor.current.copy(alpha = SECONDARY_ALPHA),
-                )
-            }
-        }
-        Row(Modifier.padding(top = 14.dp)) {
+    val since = stats.countingSince?.let {
+        stringResource(R.string.stats_since, DateUtils.formatDateTime(context, it, DateUtils.FORMAT_ABBREV_MONTH))
+    }
+    val container = if (onPhoto) {
+        Color.Black.copy(alpha = GLASS_ALPHA)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    }
+    Column(Modifier.testTag(NewTabTestTags.STATS)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .background(container)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
             Stat(
+                ThetaIcons.ShieldCheck,
                 compactCount(stats.blockedRequests),
                 stringResource(R.string.stats_blocked),
                 accent,
                 Modifier.weight(1f),
             )
             Stat(
+                ThetaIcons.DataSaved,
                 Formatter.formatShortFileSize(context, stats.estimatedBytesSaved),
                 stringResource(R.string.stats_data),
                 LocalContentColor.current,
                 Modifier.weight(1f),
             )
             Stat(
+                ThetaIcons.Timer,
                 timeSaved(context, stats.estimatedMillisSaved),
                 stringResource(R.string.stats_time),
                 LocalContentColor.current,
@@ -343,29 +352,34 @@ private fun PrivacyStatsCard(stats: PrivacyStats, onPhoto: Boolean) {
             )
         }
         Text(
-            stringResource(R.string.stats_estimated),
+            listOfNotNull(since, stringResource(R.string.stats_estimated)).joinToString("  ·  "),
             style = MaterialTheme.typography.labelSmall,
             color = LocalContentColor.current.copy(alpha = SECONDARY_ALPHA),
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(start = 4.dp, top = 6.dp),
         )
     }
 }
 
 @Composable
-private fun Stat(value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
+private fun Stat(icon: ImageVector, value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
     Column(modifier.semantics(mergeDescendants = true) {}) {
-        Text(
-            value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = valueColor,
-            maxLines = 1,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = valueColor, modifier = Modifier.size(16.dp))
+            Text(
+                value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = valueColor,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
             color = LocalContentColor.current.copy(alpha = SECONDARY_ALPHA),
             maxLines = 2,
+            modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
@@ -446,7 +460,7 @@ private fun AddTile(modifier: Modifier, onClick: () -> Unit) {
         Box(
             Modifier
                 .size(52.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(CircleShape)
                 .background(LocalContentColor.current.copy(alpha = ADD_TILE_ALPHA)),
             contentAlignment = Alignment.Center,
         ) { Icon(ThetaIcons.Plus, null) }
@@ -592,7 +606,7 @@ private const val SCRIM_BOTTOM = 0.6f
 private const val GLASS_ALPHA = 0.42f
 private const val SECONDARY_ALPHA = 0.75f
 private const val ADD_TILE_ALPHA = 0.14f
-private const val ACCENT_ON_PHOTO = 0xFFFFB07AL
+private const val ACCENT_ON_PHOTO = 0xFF9FE8D2L
 
 @ThemePreviews
 @Composable

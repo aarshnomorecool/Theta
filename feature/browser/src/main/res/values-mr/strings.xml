@@ -22,6 +22,8 @@
     <string name="error_ssl_message">या साइटच्या सुरक्षा प्रमाणपत्रावर विश्वास ठेवता आला नाही, म्हणून Theta ने ती उघडली नाही. तुम्ही पाठवलेली माहिती कोणीतरी वाचण्याचा प्रयत्न करत असू शकते.</string>
     <string name="error_network_title">पेज लोड होऊ शकले नाही</string>
     <string name="error_network_message">तुमचे इंटरनेट कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
+    <string name="error_crashed_title">हे पेज वारंवार बंद पडत आहे</string>
+    <string name="error_crashed_message">तुमचा डेटा आणि बॅटरी वाचवण्यासाठी Theta ने ते पुन्हा लोड करणे थांबवले आहे. पुन्हा प्रयत्न करा किंवा मागे जा.</string>
     <string name="retry">पुन्हा प्रयत्न करा</string>
     <string name="tabs_none">कोणताही टॅब उघडा नाही</string>
     <string name="tabs_no_incognito">खाजगी टॅब कोणतीही हिस्ट्री, कुकी किंवा साइट डेटा ठेवत नाहीत. उघडण्यासाठी + दाबा.</string>

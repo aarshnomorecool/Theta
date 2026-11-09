@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -29,9 +30,37 @@ class BrowserUiTest {
         compose.setContent {
             ThetaTheme { AddressBar("https://www.example.com/path", false, false, {}, {}, {}) }
         }
-        compose.onNodeWithTag(BrowserTestTags.ADDRESS_FIELD).assertTextContains("example.com/path")
+        compose.onNodeWithTag(BrowserTestTags.ADDRESS_FIELD).assertTextEquals("example.com")
         compose.onNodeWithTag(BrowserTestTags.ADDRESS_FIELD).performClick()
         compose.onNodeWithTag(BrowserTestTags.ADDRESS_FIELD).assertTextContains("https://www.example.com/path")
+    }
+
+    /** Regression test: credentials in the address made https://bank.example@evil.example read as bank.example. */
+    @Test
+    fun addressBarShowsTheRealHostNotTheCredentials() {
+        compose.setContent {
+            ThetaTheme { AddressBar("https://bank.example@evil.example/login", false, false, {}, {}, {}) }
+        }
+        compose.onNodeWithTag(BrowserTestTags.ADDRESS_FIELD).assertTextEquals("evil.example")
+    }
+
+    /** Regression test: an https page whose certificate failed still showed the "Secure connection" lock. */
+    @Test
+    fun certificateErrorRemovesTheLock() {
+        compose.setContent {
+            ThetaTheme {
+                AddressBar("https://bad.example/", false, false, {}, {}, {}, isCertificateError = true)
+            }
+        }
+        compose.onNodeWithContentDescription("Secure connection").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Connection not secure").assertIsDisplayed()
+    }
+
+    /** Regression test: private tabs replaced the "not secure" warning with the private-mode icon. */
+    @Test
+    fun privateTabsStillWarnAboutPlainHttp() {
+        compose.setContent { ThetaTheme { AddressBar("http://plain.example/", true, false, {}, {}, {}) } }
+        compose.onNodeWithContentDescription("Connection not secure").assertIsDisplayed()
     }
 
     @Test

@@ -52,6 +52,9 @@ class ExternalLinks @Inject constructor(@ApplicationContext private val context:
         } catch (ignored: URISyntaxException) {
             return null
         }
+        // A page has no business pointing another app at local files, or routing an intent back into this app.
+        if (parsed.data?.scheme?.lowercase() in LOCAL_DATA_SCHEMES) return null
+        if (parsed.`package` == context.packageName) return null
         val fallback = parsed.getStringExtra(EXTRA_FALLBACK_URL)?.takeIf { it.startsWith("https://") }
         return ExternalLink(sanitize(parsed), fallback, scheme)
     }
@@ -75,10 +78,10 @@ class ExternalLinks @Inject constructor(@ApplicationContext private val context:
         component = null
         selector = null
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        if (`package` == context.packageName) `package` = null
     }
 
     private companion object {
         const val EXTRA_FALLBACK_URL = "browser_fallback_url"
+        val LOCAL_DATA_SCHEMES = setOf("file", "content")
     }
 }

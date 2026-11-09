@@ -8,7 +8,6 @@
     <string name="speed_dial_remove_message">Remove this site from speed dial?</string>
     <string name="recent_sites_title">Recent sites</string>
     <string name="top_sites_title">Top sites</string>
-    <string name="stats_title">Privacy stats</string>
     <string name="stats_blocked">Ads and trackers blocked</string>
     <string name="stats_data">Data saved</string>
     <string name="stats_time">Time saved</string>

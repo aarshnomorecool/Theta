@@ -57,8 +57,13 @@ internal object CosmeticInjector {
         }
     }
 
+    /**
+     * The page runs COLLECT in its own world and can redefine what it returns, so the result is untrusted. It is
+     * parsed on the main thread, so an oversized reply is dropped rather than letting a page freeze the browser.
+     */
     private fun parse(result: String?): Pair<List<String>, List<String>>? = try {
-        val json = JSONObject(result ?: return null)
+        if (result == null || result.length > MAX_RESULT_CHARS) return null
+        val json = JSONObject(result)
         json.getJSONArray("i").strings() to json.getJSONArray("c").strings()
     } catch (ignored: JSONException) {
         null
@@ -74,6 +79,9 @@ internal object CosmeticInjector {
     }
 
     private const val MAX_PROBES = 40
+
+    /** COLLECT stops at 3000 names; even long ones fit well inside this. */
+    private const val MAX_RESULT_CHARS = 512 * 1024
 
     /** Capped, so a page with a huge DOM costs a few milliseconds at most. */
     private const val COLLECT = """(function(){try{var ids={},cls={},n=0,max=3000;

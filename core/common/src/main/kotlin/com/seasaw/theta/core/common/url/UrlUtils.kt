@@ -59,10 +59,29 @@ object UrlUtils {
      */
     fun siteOf(url: String): String? = hostOf(url)?.let(::registrableDomain)
 
-    /** Short, readable form for the address bar and lists: no scheme, no www, no trailing slash. */
-    fun displayUrl(url: String): String = url
-        .removePrefix("https://")
-        .removePrefix("http://")
-        .removePrefix("www.")
-        .removeSuffix("/")
+    /**
+     * Short, readable form for lists: no scheme, no credentials, no www, no trailing slash. Credentials are dropped
+     * because `https://bank.com@evil.com` is a phishing shape that would otherwise read as bank.com.
+     */
+    fun displayUrl(url: String): String {
+        val withoutScheme = url.removePrefix("https://").removePrefix("http://")
+        val authorityEnd = withoutScheme.indexOfFirst { it in AUTHORITY_TERMINATORS }
+            .let { if (it < 0) withoutScheme.length else it }
+        val at = if (withoutScheme.length == url.length) -1 else withoutScheme.lastIndexOf('@', authorityEnd - 1)
+        return withoutScheme.substring(at + 1)
+            .removePrefix("www.")
+            .removeSuffix("/")
+    }
+
+    /**
+     * Only the host, as people read it: no scheme, credentials, port, path or "www.". This is what the address bar
+     * shows while not being edited, because a long path or a long subdomain can push the real site out of view.
+     * Null for addresses without a host, such as about:blank.
+     */
+    fun displayHost(url: String): String? = hostOf(url)?.removePrefix("www.")?.ifEmpty { null }
+
+    /** True for the addresses the browser UI may load directly: http(s) and about:blank. */
+    fun isWebUrl(url: String): Boolean = url.startsWith("https://", ignoreCase = true) ||
+        url.startsWith("http://", ignoreCase = true) ||
+        url.equals("about:blank", ignoreCase = true)
 }
