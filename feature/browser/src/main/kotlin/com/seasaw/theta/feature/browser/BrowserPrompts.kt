@@ -21,6 +21,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,7 @@ import com.seasaw.theta.core.data.settings.UserSettings
 import com.seasaw.theta.core.ui.R as CoreUiR
 import com.seasaw.theta.core.ui.ThetaIcons
 import com.seasaw.theta.core.webview.SitePermission
+import kotlinx.coroutines.delay
 
 /** Shows whichever question is pending. Nothing a page does can skip these. */
 @Composable
@@ -76,9 +78,17 @@ private fun PermissionDialog(prompt: BrowserPrompt.Permission, onEvent: (Browser
     val needed = request.permissions.flatMap { it.manifestPermissions() }
     val systemLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-            val granted = results.values.any { it }
+            // Every requested kind needs one Android permission: camera alone must not grant a camera+mic request.
+            // Location is satisfied by either the fine or the coarse permission.
+            val granted = request.permissions.all { permission ->
+                permission.manifestPermissions().any { name ->
+                    results[name] == true ||
+                        ContextCompat.checkSelfPermission(context, name) == PackageManager.PERMISSION_GRANTED
+                }
+            }
             onEvent(BrowserUiEvent.RespondPermission(granted, rememberChoice && granted))
         }
+    val armed = rememberArmed()
     val labels = request.permissions.map { stringResource(it.labelRes()) }.joinToString()
     AlertDialog(
         onDismissRequest = { onEvent(BrowserUiEvent.RespondPermission(granted = false, remember = false)) },
@@ -110,6 +120,7 @@ private fun PermissionDialog(prompt: BrowserPrompt.Permission, onEvent: (Browser
                         systemLauncher.launch(missing.toTypedArray())
                     }
                 },
+                enabled = armed,
             ) { Text(stringResource(R.string.action_allow)) }
         },
         dismissButton = {
@@ -128,6 +139,22 @@ private fun SitePermission.labelRes(): Int = when (this) {
     SitePermission.LOCATION -> R.string.permission_location
 }
 
+/**
+ * False for a moment after a dialog appears. A page can raise a dialog at the exact moment it expects a tap, so the
+ * tap meant for the page would land on "Allow"; the delay means only a deliberate tap can say yes.
+ */
+@Composable
+private fun rememberArmed(): Boolean {
+    var armed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(PROMPT_ARMING_MILLIS)
+        armed = true
+    }
+    return armed
+}
+
+private const val PROMPT_ARMING_MILLIS = 500L
+
 /** Project rule: open other apps only after asking, and never auto-launch. */
 @Composable
 private fun OpenAppDialog(
@@ -135,6 +162,7 @@ private fun OpenAppDialog(
     onEvent: (BrowserUiEvent) -> Unit,
     onOpenExternal: (BrowserPrompt.OpenExternally) -> Unit,
 ) {
+    val armed = rememberArmed()
     AlertDialog(
         onDismissRequest = { onEvent(BrowserUiEvent.RespondOpenExternally(open = false)) },
         title = { Text(stringResource(R.string.open_app_title)) },
@@ -145,6 +173,7 @@ private fun OpenAppDialog(
                     onOpenExternal(prompt)
                     onEvent(BrowserUiEvent.RespondOpenExternally(open = true))
                 },
+                enabled = armed,
             ) { Text(stringResource(R.string.action_open)) }
         },
         dismissButton = {
@@ -157,6 +186,7 @@ private fun OpenAppDialog(
 
 @Composable
 private fun DownloadDialog(prompt: BrowserPrompt.Download, onEvent: (BrowserUiEvent) -> Unit) {
+    val armed = rememberArmed()
     AlertDialog(
         onDismissRequest = { onEvent(BrowserUiEvent.RespondDownload(accept = false)) },
         title = { Text(stringResource(R.string.download_title)) },
@@ -165,7 +195,7 @@ private fun DownloadDialog(prompt: BrowserPrompt.Download, onEvent: (BrowserUiEv
             Text(prompt.fileName + note)
         },
         confirmButton = {
-            TextButton(onClick = { onEvent(BrowserUiEvent.RespondDownload(accept = true)) }) {
+            TextButton(onClick = { onEvent(BrowserUiEvent.RespondDownload(accept = true)) }, enabled = armed) {
                 Text(stringResource(R.string.action_download))
             }
         },
@@ -256,7 +286,8 @@ internal fun BrowserMenu(
             MenuToggleRow(R.string.menu_desktop_site, ThetaIcons.Desktop, tab.isDesktopMode) {
                 onEvent(BrowserUiEvent.ToggleDesktopMode)
             }
-            if (state.isAdBlockEnabled) {
+            // Not offered in private tabs: the choice is saved on disk, which would record the private visit.
+            if (state.isAdBlockEnabled && !tab.isIncognito) {
                 MenuToggleRow(R.string.menu_allow_ads, ThetaIcons.Shield, state.isSiteExemptFromAdBlock) {
                     onEvent(BrowserUiEvent.ToggleSiteAdBlock)
                 }

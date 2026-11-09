@@ -2,6 +2,7 @@ package com.seasaw.theta.feature.adblock
 
 import com.seasaw.theta.core.common.AppError
 import com.seasaw.theta.core.common.AppResult
+import java.io.IOException
 import java.net.InetAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -13,6 +14,7 @@ import okhttp3.tls.HeldCertificate
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -83,6 +85,26 @@ class FilterListDownloaderTest {
         val line = "x".repeat(1024) + "\n"
         respond(body = line.repeat(17 * 1024))
         assertEquals(AppResult.Failure(AppError.Network), downloader.download(listOf(url("/huge.txt"))))
+    }
+
+    /** Regression test: OkHttp follows https-to-http redirects by default, letting a network attacker swap a list. */
+    @Test
+    fun `a list redirected to plain http is refused`() = runTest {
+        MockWebServer().use { plain ->
+            plain.start()
+            plain.enqueue(MockResponse.Builder().body("||ads.example^\n").build())
+            server.enqueue(
+                MockResponse.Builder().code(302).addHeader("Location", plain.url("/list.txt").toString()).build(),
+            )
+            assertEquals(AppResult.Failure(AppError.Network), downloader.download(listOf(url("/list.txt"))))
+        }
+    }
+
+    /** Regression test: the limit was checked per line, so one endless line was read whole before any check. */
+    @Test
+    fun `the byte limit stops a single endless line`() {
+        val endless = LimitedInputStream(ByteArray(4096) { 'x'.code.toByte() }.inputStream(), limit = 1024)
+        assertThrows(IOException::class.java) { endless.bufferedReader().readLine() }
     }
 
     @Test

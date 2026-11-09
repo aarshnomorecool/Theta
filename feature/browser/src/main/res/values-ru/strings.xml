@@ -22,6 +22,8 @@
     <string name="error_ssl_message">Сертификат безопасности сайта не вызывает доверия, поэтому Theta не открыл его. Возможно, кто-то пытается прочитать данные, которые вы отправляете на этот сайт.</string>
     <string name="error_network_title">Не удалось загрузить страницу</string>
     <string name="error_network_message">Проверьте подключение к интернету и повторите попытку.</string>
+    <string name="error_crashed_title">Эта страница постоянно падает</string>
+    <string name="error_crashed_message">Theta больше не перезагружает её, чтобы не расходовать трафик и заряд. Повторите попытку или вернитесь назад.</string>
     <string name="retry">Повторить</string>
     <string name="tabs_none">Нет открытых вкладок</string>
     <string name="tabs_no_incognito">Приватные вкладки не хранят историю, cookie и данные сайтов. Нажмите +, чтобы открыть.</string>

@@ -42,7 +42,14 @@ enum class LinkTarget { NEW_TAB, NEW_TAB_IN_GROUP, INCOGNITO_TAB }
 sealed interface BrowserPrompt {
     data class Permission(val prompt: PermissionPrompt) : BrowserPrompt
     data class OpenExternally(val link: ExternalLink) : BrowserPrompt
-    data class Download(val offer: DownloadOffer, val fileName: String, val isIncognito: Boolean) : BrowserPrompt
+
+    /** [pageUrl] is the page that offered the file, which decides whether its site's cookies may go along. */
+    data class Download(
+        val offer: DownloadOffer,
+        val fileName: String,
+        val isIncognito: Boolean,
+        val pageUrl: String? = null,
+    ) : BrowserPrompt
 }
 
 /** Something brief to tell the user. Text lives with the UI so that it follows the current language. */

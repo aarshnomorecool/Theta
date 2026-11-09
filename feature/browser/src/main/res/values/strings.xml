@@ -22,6 +22,8 @@
     <string name="error_ssl_message">The site\'s security certificate could not be trusted, so Theta did not open it. Someone may be trying to read what you send to this site.</string>
     <string name="error_network_title">Page could not load</string>
     <string name="error_network_message">Check your internet connection and try again.</string>
+    <string name="error_crashed_title">This page keeps crashing</string>
+    <string name="error_crashed_message">Theta stopped reloading it so it cannot drain your data and battery. Try again, or go back.</string>
     <string name="retry">Try again</string>
     <string name="tabs_none">No open tabs</string>
     <string name="tabs_no_incognito">Private tabs keep no history, cookies or site data. Tap + to open one.</string>

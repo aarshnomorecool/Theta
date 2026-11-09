@@ -8,7 +8,6 @@
     <string name="speed_dial_remove_message">इस साइट को स्पीड डायल से हटाएं?</string>
     <string name="recent_sites_title">हाल की साइटें</string>
     <string name="top_sites_title">टॉप साइटें</string>
-    <string name="stats_title">प्राइवेसी आंकड़े</string>
     <string name="stats_blocked">रोके गए विज्ञापन और ट्रैकर</string>
     <string name="stats_data">बचा डेटा</string>
     <string name="stats_time">बचा समय</string>

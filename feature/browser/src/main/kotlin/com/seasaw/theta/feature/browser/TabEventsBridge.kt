@@ -65,8 +65,8 @@ internal class TabEventsBridge(private val viewModel: BrowserViewModel, private 
         ask(BrowserPrompt.Permission(prompt)) { prompt.respond(false, false) }
 
     override fun onDownloadOffer(offer: DownloadOffer) {
-        val isIncognito = viewModel.tab(tabId)?.isIncognito == true
-        ask(BrowserPrompt.Download(offer, viewModel.fileNameFor(offer), isIncognito))
+        val tab = viewModel.tab(tabId)
+        ask(BrowserPrompt.Download(offer, viewModel.fileNameFor(offer), tab?.isIncognito == true, tab?.url))
     }
 
     override fun onNewWindowRequested(resultMessage: Message): Boolean {
@@ -76,7 +76,18 @@ internal class TabEventsBridge(private val viewModel: BrowserViewModel, private 
 
     override fun onCloseRequested() = viewModel.onEvent(BrowserUiEvent.CloseTab(tabId))
 
-    override fun onFileChooser(request: FileChooserRequest) = viewModel.updateState { it.copy(fileChooser = request) }
+    /**
+     * WebView waits for an answer to every file request. One from a tab that is not on screen, or arriving while
+     * another is open, is answered with nothing straight away, rather than replacing the first and leaving it hanging.
+     */
+    override fun onFileChooser(request: FileChooserRequest) {
+        val current = viewModel.state.value
+        if (current.selectedTabId != tabId || current.fileChooser != null) {
+            request.callback.onReceiveValue(null)
+            return
+        }
+        viewModel.updateState { it.copy(fileChooser = request) }
+    }
 
     override fun onEnterFullscreen(view: View, callback: WebChromeClient.CustomViewCallback) =
         viewModel.updateState { it.copy(fullscreen = FullscreenContent(view, callback)) }

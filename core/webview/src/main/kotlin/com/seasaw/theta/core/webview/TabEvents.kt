@@ -16,6 +16,9 @@ sealed interface PageError {
 
     /** Offline, DNS failure, timeout and so on. */
     data class Network(override val url: String, val errorCode: Int) : PageError
+
+    /** The page crashed its renderer again right after a reload, so it is not reloaded automatically any more. */
+    data class Crashed(override val url: String) : PageError
 }
 
 /** A site asked for camera, microphone or location and has no remembered answer. */

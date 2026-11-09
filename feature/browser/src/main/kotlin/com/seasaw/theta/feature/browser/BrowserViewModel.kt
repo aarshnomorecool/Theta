@@ -1,7 +1,6 @@
 package com.seasaw.theta.feature.browser
 
 import android.graphics.Bitmap
-import android.webkit.URLUtil
 import android.webkit.WebView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,6 +31,7 @@ import com.seasaw.theta.core.webview.ExternalLaunchResult
 import com.seasaw.theta.core.webview.ExternalLink
 import com.seasaw.theta.core.webview.ExternalLinks
 import com.seasaw.theta.core.webview.IncognitoProfiles
+import com.seasaw.theta.core.webview.PageError
 import com.seasaw.theta.core.webview.TabPreferences
 import com.seasaw.theta.core.webview.TabSpec
 import com.seasaw.theta.core.webview.WebDataCleaner
@@ -96,10 +96,12 @@ class BrowserViewModel @Inject constructor(
         save = ::saveTabsSoon,
     )
 
+    /** When each tab's renderer last crashed, from [System.nanoTime], to stop a crashing page reloading forever. */
+    private val rendererCrashes = HashMap<String, Long>()
+
     init {
         observeSettings()
         observeSelectedTabFacts()
-        eraser.erasures.onEach(::onDataErased).launchIn(viewModelScope)
         viewModelScope.launch { restoreTabs() }
     }
 
@@ -260,6 +262,9 @@ class BrowserViewModel @Inject constructor(
             eraser.erase(EraseRequest.BrowsingTraces)
             webDataCleaner.clearWebData()
         }
+        // Subscribed only after the startup wipe. Hearing that wipe would close every tab, including one that a link
+        // from another app opened while this was running.
+        eraser.erasures.onEach(::onDataErased).launchIn(viewModelScope)
         val saved = tabsRepository.restore()
         val groups = saved.groups.map { TabGroup(it.id, it.name, it.colorIndex) }
         val groupIds = groups.map { it.id }.toSet()
@@ -294,6 +299,8 @@ class BrowserViewModel @Inject constructor(
     }
 
     private fun navigateSelected(url: String) {
+        // loadUrl("javascript:...") would run in whatever page is open, so only web addresses get through.
+        if (!UrlUtils.isWebUrl(url)) return
         val tab = state.value.selectedTab ?: return
         updateTab(tab.id) { it.copy(url = url, error = null) }
         viewModelScope.launch {
@@ -317,6 +324,7 @@ class BrowserViewModel @Inject constructor(
         groupId: String? = null,
         inBackground: Boolean = false,
     ) {
+        if (initialUrl != null && !UrlUtils.isWebUrl(initialUrl)) return
         val current = state.value
         val reusable = TabListRules.reusableNewTab(current.tabs, isIncognito, groupId).takeIf { initialUrl == null }
         if (reusable != null) {
@@ -330,6 +338,7 @@ class BrowserViewModel @Inject constructor(
             groupId = groupId,
             title = initialUrl?.let(UrlUtils::displayUrl).orEmpty(),
         )
+        if (!inBackground) dismissPrompt()
         _state.update {
             val tabs = it.tabs.toMutableList().apply { add(TabGroupRules.insertionIndex(it.tabs, groupId), tab) }
             if (inBackground) {
@@ -364,6 +373,7 @@ class BrowserViewModel @Inject constructor(
     }
 
     private fun select(id: String) {
+        if (id != state.value.selectedTabId) dismissPrompt()
         _state.update { it.copy(selectedTabId = id, isTabSwitcherOpen = false, find = null) }
         viewModelScope.launch {
             showTab(id)
@@ -403,6 +413,8 @@ class BrowserViewModel @Inject constructor(
             selected
         }
         val remaining = current.tabs.filter { it.id !in ids }
+        if (selected != null && selected in ids) dismissPrompt()
+        rendererCrashes -= ids
         _state.update {
             it.copy(
                 tabs = remaining,
@@ -465,6 +477,7 @@ class BrowserViewModel @Inject constructor(
 
     private fun goHome() {
         val tab = state.value.selectedTab ?: return
+        dismissPrompt()
         viewModelScope.launch {
             pool.close(tab.id)
             updateTab(tab.id) { it.copy(url = "", title = "", canGoBack = false, canGoForward = false, error = null) }
@@ -498,6 +511,8 @@ class BrowserViewModel @Inject constructor(
     }
 
     private fun toggleSiteAdBlock() {
+        // The exemption list lives on disk, so writing to it from a private tab would leave a record of the visit.
+        if (state.value.selectedTab?.isIncognito != false) return
         val site = state.value.selectedTab?.url?.let(UrlUtils::hostOf)?.let(UrlUtils::registrableDomain) ?: return
         val exempt = !state.value.isSiteExemptFromAdBlock
         viewModelScope.launch {
@@ -558,7 +573,7 @@ class BrowserViewModel @Inject constructor(
         val prompt = state.value.prompt as? BrowserPrompt.Download
         clearPrompt()
         if (prompt == null || !accept) return
-        when (val result = downloadEnqueuer.enqueue(prompt.offer, prompt.isIncognito)) {
+        when (val result = downloadEnqueuer.enqueue(prompt.offer, prompt.isIncognito, prompt.pageUrl)) {
             is AppResult.Success -> {
                 analytics.track(AnalyticsEvent.DownloadStarted)
                 showMessage(BrowserMessage.DOWNLOAD_STARTED)
@@ -624,6 +639,15 @@ class BrowserViewModel @Inject constructor(
 
     private fun clearPrompt() = _state.update { it.copy(prompt = null) }
 
+    /**
+     * Prompts only ever come from the tab on screen. Once that tab is no longer shown, its question must not sit over
+     * another site, where it would look like that site was asking.
+     */
+    private fun dismissPrompt() {
+        (state.value.prompt as? BrowserPrompt.Permission)?.prompt?.respond?.invoke(false, false)
+        clearPrompt()
+    }
+
     private fun showMessage(message: BrowserMessage) = _state.update { it.copy(message = message) }
 
     internal fun updateTab(id: String, transform: (BrowserTab) -> BrowserTab) {
@@ -668,6 +692,7 @@ class BrowserViewModel @Inject constructor(
 
     internal fun requestNewWindow(message: android.os.Message, isIncognito: Boolean) {
         val tab = BrowserTab(id = UUID.randomUUID().toString(), url = BLANK_URL, isIncognito = isIncognito)
+        dismissPrompt()
         _state.update { it.copy(tabs = it.tabs + tab, selectedTabId = tab.id, isTabSwitcherOpen = false) }
         viewModelScope.launch {
             val webView = pool.acquire(specFor(tab), TabEventsBridge(this@BrowserViewModel, tab.id)) { }
@@ -677,20 +702,32 @@ class BrowserViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Background tabs restore themselves when next shown. Only the visible tab counts towards the crash loop guard:
+     * WebViews share one renderer, so its crash also reaches tabs whose own pages were fine.
+     */
     internal fun onRendererGone(id: String) {
-        val isVisible = state.value.selectedTabId == id
+        if (state.value.selectedTabId != id) return
+        val now = System.nanoTime()
+        val previous = rendererCrashes.put(id, now)
+        if (previous != null && now - previous < RENDERER_CRASH_WINDOW_NANOS) {
+            // Crashed again straight after a reload. Reloading again would loop forever, burning data and battery, so
+            // the user decides instead.
+            updateTab(id) { it.copy(error = PageError.Crashed(it.url), progress = BrowserTab.PROGRESS_DONE) }
+            return
+        }
         viewModelScope.launch {
-            if (isVisible) {
-                showTab(id)
-                showMessage(BrowserMessage.PAGE_RELOADED)
-            }
+            showTab(id)
+            showMessage(BrowserMessage.PAGE_RELOADED)
         }
     }
 
+    /** The same name the file will be saved under, so the prompt cannot show one name and save another. */
     internal fun fileNameFor(offer: com.seasaw.theta.core.webview.DownloadOffer): String =
-        URLUtil.guessFileName(offer.url, offer.contentDisposition, offer.mimeType)
+        downloadEnqueuer.fileNameFor(offer)
 
     private companion object {
         const val BLANK_URL = "about:blank"
+        const val RENDERER_CRASH_WINDOW_NANOS = 15_000_000_000L
     }
 }

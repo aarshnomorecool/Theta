@@ -66,4 +66,31 @@ class UrlUtilsTest {
         assertEquals("example.com/a", UrlUtils.displayUrl("https://www.example.com/a/".removeSuffix("/")))
         assertEquals("example.com", UrlUtils.displayUrl("http://example.com/"))
     }
+
+    /** Regression test: credentials made https://bank.com@evil.com read as bank.com in lists and tab titles. */
+    @Test
+    fun `display url drops credentials so the real host shows`() {
+        assertEquals("evil.com/x", UrlUtils.displayUrl("https://bank.com@evil.com/x"))
+        assertEquals("evil.com", UrlUtils.displayUrl("https://user:pw@www.evil.com/"))
+        assertEquals("example.com/a@b", UrlUtils.displayUrl("https://example.com/a@b"))
+    }
+
+    @Test
+    fun `display host keeps only the host`() {
+        assertEquals("evil.com", UrlUtils.displayHost("https://accounts.bank.com@evil.com/login?next=/"))
+        assertEquals("news.example.co.in", UrlUtils.displayHost("https://news.example.co.in:8443/today"))
+        assertEquals("example.com", UrlUtils.displayHost("https://www.example.com/a"))
+        assertNull(UrlUtils.displayHost("about:blank"))
+    }
+
+    @Test
+    fun `only web addresses may be loaded from the ui`() {
+        assertTrue(UrlUtils.isWebUrl("https://example.com"))
+        assertTrue(UrlUtils.isWebUrl("HTTP://example.com"))
+        assertTrue(UrlUtils.isWebUrl("about:blank"))
+        assertFalse(UrlUtils.isWebUrl("javascript:alert(1)"))
+        assertFalse(UrlUtils.isWebUrl("file:///sdcard/x.html"))
+        assertFalse(UrlUtils.isWebUrl("content://x/y"))
+        assertFalse(UrlUtils.isWebUrl("data:text/html,x"))
+    }
 }

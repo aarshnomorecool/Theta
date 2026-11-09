@@ -57,6 +57,7 @@ class DeferredStartup @Inject constructor(
         adBlocker.start()
         filterUpdates.schedule()
         scheduleCleanup()
+        // Already installed in ThetaApplication. Running again wraps any handler an SDK added since then.
         crashReporter.installUncaughtExceptionScrubber()
 
         settings.settings

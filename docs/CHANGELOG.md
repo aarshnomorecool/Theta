@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+### Security
+
+- The address bar no longer shows the "Secure connection" lock on a page whose certificate failed, and private tabs
+  now show the "not secure" warning for http pages instead of hiding it behind the private-mode icon.
+- The address bar shows only the site's host while not being edited, with the registrable domain emphasised and long
+  hosts shortened from the start, so credentials (`https://bank.example@evil.example`) or long subdomains cannot hide
+  the real site. Lists and tab titles also drop credentials from addresses.
+- Screenshots and the recent-apps preview are blocked while the tab switcher can show private tab previews.
+- "Allow ads on this site" is no longer offered in private tabs: it saved the site to the database, leaving a record
+  of the private visit.
+- Permission, open-app and download prompts ignore taps for half a second after appearing (tapjacking), and are
+  withdrawn, with permission requests denied, when their tab leaves the screen.
+- A camera-and-microphone request is only granted when both Android permissions are.
+- `intent://` links that point other apps at `file:` or `content:` data, or back at Theta, are refused.
+- Downloads: the prompt shows exactly the name the file is saved under; bidirectional and invisible characters are
+  stripped, so `invoice<U+202E>fdp.apk` cannot pose as a PDF; and cookies are only attached when the download is on the
+  same site as the page, because DownloadManager re-sends them on every redirect.
+- Filter list downloads refuse to be redirected from https to http, and the size limit now counts bytes, so one
+  endless line cannot exhaust memory.
+- The crash report URL scrubber is installed in `Application.onCreate`, so crashes before the first frame are scrubbed.
+- The browser UI only loads http(s) and about:blank addresses, as a guard against `javascript:` or `file:` arriving
+  from stored data.
+- Cosmetic filtering drops oversized page replies instead of parsing them on the main thread.
+
+### Fixed
+
+- With clear-on-exit on, a link opened from another app at cold start could be closed by the startup wipe.
+- Reopening Theta from recent apps, or after the system restored it, reopened the last link from another app.
+- A page that crashes its renderer on every load was reloaded forever; it now stops after a repeat and shows an error.
+- A second file-upload request replaced the first, which then never got an answer.
+- `testDebugUnitTest`, and so CI, now runs the ad blocker module's unit tests. The module tests its release build,
+  and AGP only creates unit tests for the tested build type, so they were silently skipped.
+
+### Changed
+
+- The Neel theme is back, matching the launcher icon: indigo surfaces with a marigold accent in dark mode, deep indigo
+  with marigold containers in light mode. Corners are slightly tighter throughout.
+- The bottom toolbar is a floating dock with a filled new-tab button and a filled tab counter.
+- The tab switcher has labelled page chips, picture-first cards with the title underneath, and a labelled "New tab"
+  button.
+- The new-tab page shows the theta mark and a slimmer privacy stats row. Site icons are circles.
+
 ## 0.2.0 (2026-11-08)
 
 ### Added in 0.2.0 after the UI rework

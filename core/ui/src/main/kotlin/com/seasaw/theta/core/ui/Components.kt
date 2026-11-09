@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.sp
 annotation class ThemePreviews
 
 /**
- * A site's icon in a rounded square. Shows the site's own favicon when the app has seen it, otherwise its initial.
+ * A site's icon in a circle. Shows the site's own favicon when the app has seen it, otherwise its initial.
  * Favicons come only from pages the user visited: the app never bundles or fetches other brands' logos.
  */
 @Composable
@@ -82,12 +82,12 @@ fun SiteIcon(label: String, modifier: Modifier = Modifier, favicon: ImageBitmap?
     }
 }
 
-/** Kept for older call sites. A site's initial in the standard rounded square. */
+/** Kept for older call sites. A site's initial in the standard circle. */
 @Composable
 fun SiteAvatar(label: String, modifier: Modifier = Modifier, size: Dp = 40.dp) = SiteIcon(label, modifier, size = size)
 
 private const val AVATAR_TEXT_RATIO = 0.42f
-private const val ICON_CORNER_RATIO = 0.3f
+private const val ICON_CORNER_RATIO = 0.5f
 private const val FAVICON_RATIO = 0.55f
 
 @Composable

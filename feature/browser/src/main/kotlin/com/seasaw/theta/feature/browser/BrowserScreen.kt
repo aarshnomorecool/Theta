@@ -88,7 +88,9 @@ fun BrowserRoute(
         onDispose { viewModel.attachHost(null) }
     }
 
-    val isIncognitoVisible = state.selectedTab?.isIncognito == true
+    // The switcher shows pictures of private pages too, even while the selected tab is a regular one.
+    val isIncognitoVisible = state.selectedTab?.isIncognito == true ||
+        (state.isTabSwitcherOpen && state.tabs.any { it.isIncognito })
     DisposableEffect(activity, isIncognitoVisible) {
         // Keeps private pages out of screenshots and the recent apps preview.
         if (isIncognitoVisible) {
@@ -198,6 +200,7 @@ internal fun BrowserScreen(
                 onSubmit = { onEvent(BrowserUiEvent.Submit(it)) },
                 onReload = { onEvent(BrowserUiEvent.Reload) },
                 onStop = { onEvent(BrowserUiEvent.StopLoading) },
+                isCertificateError = tab?.error is PageError.Ssl,
             )
             if (tab?.isLoading == true) PageProgress(tab.progress)
             state.find?.let { find ->
@@ -220,6 +223,7 @@ internal fun BrowserScreen(
                         isSslError = tab.error is PageError.Ssl,
                         onRetry = { onEvent(BrowserUiEvent.Reload) },
                         modifier = Modifier.fillMaxSize(),
+                        isCrash = tab.error is PageError.Crashed,
                     )
 
                     else -> WebViewHost(tab.id, state.webViewGeneration, webViewFor)
@@ -257,7 +261,7 @@ internal fun BrowserScreen(
                 )
             }
         }
-        SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp))
+        SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter).padding(bottom = 72.dp))
     }
 
     if (isTextSizeOpen) {
